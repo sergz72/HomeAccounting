@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">Учет доходов и расходов</string>
+    <string name="navigation_drawer_open">Открыть навигационную панель</string>
+    <string name="navigation_drawer_close">Закрыть навигационную панель</string>
+    <string name="action_settings">Установки</string>
+    <string name="action_refresh">Обновить</string>
+    <string name="action_modify">Изменить</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_add">Создать</string>
+    <string name="add_operation">Добавить операцию</string>
+    <string name="modify_operation">Изменить операцию</string>
+    <string name="subcategory">Субкатегория</string>
+    <string name="account">Счет</string>
+    <string name="amount">Количество</string>
+    <string name="summa">Сумма</string>
+    <string name="pref_title_server_name">Имя сервера</string>
+    <string name="title_activity_settings">Установки</string>
+    <string name="title_activity_editoperation">Операция</string>
+    <string name="title_activity_pin">Пин код</string>
+    <string name="select_date">Дата</string>
+    <string name="select_date_start">Начальная дата</string>
+    <string name="select_date_end">Конечная дата</string>
+    <string name="operations">Операции</string>
+    <string name="dicts">Справочники</string>
+    <string name="reports">Отчеты</string>
+    <string name="money_flow">Движение по счетам</string>
+    <string name="error">Ошибка</string>
+    <string name="empty_summa">Сумма должна быть заполнена</string>
+    <string name="empty_subcategory">Субкатегория должна быть заполнена</string>
+    <string name="parameters">Параметры</string>
+    <string name="add">Добавить</string>
+    <string name="remove">Удалить</string>
+    <string name="second_account">Второй счет</string>
+    <string name="unknown_property">Неизвестный параметр</string>
+    <string name="distance">Расстояние</string>
+    <string name="network">Сеть заправок</string>
+    <string name="type">Марка бензина</string>
+    <string name="confirmation">Подтверждение</string>
+    <string name="operation_delete_confirmation">Вы уверены что хотите удалить выделенную операцию?</string>
+    <string name="results">Результаты</string>
+    <string name="grouping">Группировка</string>
+    <string name="category">Категория</string>
+    <string name="total">Всего</string>
+    <string name="generate">Сформировать</string>
+    <string name="all">Все</string>
+    <string name="income">Приход</string>
+    <string name="expenditure">Расход</string>
+    <string name="val">Вал</string>
+    <string name="setPin">Установка нового пин кода</string>
+    <string name="enterPin">Введите пин код</string>
+    <string name="enterPinAgain">Введите пин код еще раз</string>
+    <string name="ok">Ввод</string>
+    <string name="wrongPin">Неверный пин код</string>
+    <string name="shortPin">Слишком короткий пин код</string>
+
+    <string-array name="groupByNames">
+        <item>Месяц</item>
+        <item>Счет</item>
+        <item>Категория</item>
+        <item>Детально</item>
+    </string-array>
+</resources>
