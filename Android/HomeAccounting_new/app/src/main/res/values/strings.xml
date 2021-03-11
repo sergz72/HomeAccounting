@@ -1,0 +1,72 @@
+<resources>
+    <string name="app_name">Home accounting</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_modify">Modify</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_add">New</string>
+    <string name="add_operation">Add operation</string>
+    <string name="modify_operation">Modify operation</string>
+    <string name="subcategory">Subcategory</string>
+    <string name="account">Account</string>
+    <string name="amount">Amount</string>
+    <string name="summa">Summa</string>
+    <string name="pref_title_server_name">Server name</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="title_activity_editoperation">Operation</string>
+    <string name="title_activity_pin">Pin</string>
+    <string name="select_date">Date</string>
+    <string name="select_date_start">Start date</string>
+    <string name="select_date_end">End date</string>
+    <string name="operations">Operations</string>
+    <string name="reports">Reports</string>
+    <string name="gas_report">Gas report</string>
+    <string name="money_flow">Money flow on accounts</string>
+    <string name="error">Error</string>
+    <string name="empty_summa">Summa field cannot be empty</string>
+    <string name="empty_subcategory">Subcategory field cannot be empty</string>
+    <string name="parameters">Parameters</string>
+    <string name="add">Add</string>
+    <string name="remove">Remove</string>
+    <string name="second_account">Second account</string>
+    <string name="unknown_property">Unknown property</string>
+    <string name="distance">Distance</string>
+    <string name="network">Network</string>
+    <string name="network_short">Network</string>
+    <string name="type">Type</string>
+    <string name="type_short">Type</string>
+    <string name="confirmation">Confirmation</string>
+    <string name="operation_delete_confirmation">Are you sure that you want to delete selected operation?</string>
+    <string name="results">Results</string>
+    <string name="grouping">Grouping</string>
+    <string name="category">Category</string>
+    <string name="total">Total</string>
+    <string name="generate">Generate</string>
+    <string name="all">All</string>
+    <string name="income">Income</string>
+    <string name="expenditure">Expend.</string>
+    <string name="val">Val</string>
+    <string name="setPin">Please set new pin code</string>
+    <string name="enterPin">Please enter pin code</string>
+    <string name="enterPinAgain">Please enter pin code again</string>
+    <string name="ok">OK</string>
+    <string name="wrongPin">Wrong pin code</string>
+    <string name="shortPin">Too short pin code</string>
+    <string name="pricePerLiter">Price/l</string>
+    <string name="litersPer100km">L/100km</string>
+
+    <string-array name="groupByValues">
+        <item>Month</item>
+        <item>Account</item>
+        <item>Category</item>
+        <item>Detailed</item>
+    </string-array>
+    <string-array name="groupByNames">
+        <item>Month</item>
+        <item>Account</item>
+        <item>Category</item>
+        <item>Detailed</item>
+    </string-array>
+</resources>
