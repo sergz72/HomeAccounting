@@ -1,8 +1,8 @@
 package core
 
 import (
+	"HomeAccountingDB/src/core/entities"
 	"bytes"
-	"core/entities"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -130,9 +130,9 @@ func handle(addr net.Addr, data []byte) {
 	encodedData, err := AesEncode(writer.Bytes(), server.key, true, nil)
 	if err != nil {
 		logError(err.Error())
-		server.conn.WriteTo([]byte(err.Error()), addr)
+		_, _ = server.conn.WriteTo([]byte(err.Error()), addr)
 	} else {
-		server.conn.WriteTo(encodedData, addr)
+		_, _ = server.conn.WriteTo(encodedData, addr)
 	}
 }
 
@@ -383,46 +383,11 @@ func getOperations(w *bytes.Buffer, req string) {
 		w.Write([]byte("400 Bad request: invalid date"))
 		return
 	}
-	var message strings.Builder
-	_, err = message.WriteString("{\"operations\": ")
+	ops := server.db.GetFinanceOperationsAndTotals(date)
+	result, err := json.Marshal(ops)
 	if err != nil {
-		w.Write([]byte("500 strings.Builder error1: " + err.Error()))
+		w.Write([]byte("500 json.Marshal(ops) error: " + err.Error()))
 		return
 	}
-	ops, ok := server.db.FinanceOperations[date]
-	if !ok {
-		ops = []entities.FinanceOperation{}
-	}
-	result, errm := json.Marshal(ops)
-	if errm != nil {
-		w.Write([]byte("500 json.Marshal(ops) error: " + errm.Error()))
-		return
-	}
-	_, err = message.Write(result)
-	if err != nil {
-		w.Write([]byte("500 strings.Builder error2: " + err.Error()))
-		return
-	}
-	_, err = message.WriteString(", \"totals\": ")
-	if err != nil {
-		w.Write([]byte("500 strings.Builder error3: " + err.Error()))
-		return
-	}
-	totals := server.db.GetFinanceTotals(date)
-	result, err = json.Marshal(totals)
-	if err != nil {
-		w.Write([]byte("500 json.Marshal(totals) error: " + err.Error()))
-		return
-	}
-	_, err = message.Write(result)
-	if err != nil {
-		w.Write([]byte("500 strings.Builder error4: " + err.Error()))
-		return
-	}
-	_, err = message.WriteString("}")
-	if err != nil {
-		w.Write([]byte("500 strings.Builder error6: " + err.Error()))
-		return
-	}
-	w.Write([]byte(message.String()))
+	w.Write(result)
 }

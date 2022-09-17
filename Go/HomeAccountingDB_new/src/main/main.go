@@ -1,8 +1,8 @@
 package main
 
 import (
-	"core"
-	"core/entities"
+	"HomeAccountingDB/src/core"
+	"HomeAccountingDB/src/core/entities"
 	"fmt"
 	"os"
 	"sort"

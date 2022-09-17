@@ -1,7 +1,7 @@
 package core
 
 import (
-  "core/entities"
+  "HomeAccountingDB/src/core/entities"
   "fmt"
   "time"
 )
