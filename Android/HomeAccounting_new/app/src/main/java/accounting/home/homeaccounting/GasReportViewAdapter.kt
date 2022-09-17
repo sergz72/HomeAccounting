@@ -9,13 +9,11 @@ import android.widget.TextView
 
 import java.util.ArrayList
 
-import accounting.home.homeaccounting.entities.ReportItem
 import android.content.res.Resources
 import androidx.recyclerview.widget.RecyclerView
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class GasReportViewAdapter() : RecyclerView.Adapter<GasReportViewAdapter.ViewHolder>() {
+class GasReportViewAdapter : RecyclerView.Adapter<GasReportViewAdapter.ViewHolder>() {
     companion object {
         private val SELECTED_ITEM_COLOR = Color.rgb(200, 200, 255)
         val DAY_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
@@ -71,7 +69,7 @@ class GasReportViewAdapter() : RecyclerView.Adapter<GasReportViewAdapter.ViewHol
         var mPricePerLiterView: TextView = v.findViewById<View>(R.id.pricePerLiter) as TextView
         var mDistanceView: TextView = v.findViewById<View>(R.id.distance) as TextView
         var mLitersPer100kmView: TextView = v.findViewById<View>(R.id.litersPer100km) as TextView
-        var mAutoSizer: ViewAutoSize? = null
+        private var mAutoSizer: ViewAutoSize? = null
 
         init {
             v.setOnClickListener(this)

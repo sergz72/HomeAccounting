@@ -1,5 +1,6 @@
 package accounting.home.homeaccounting
 
+import accounting.home.homeaccounting.entities.*
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -9,15 +10,11 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.ArrayList
 
-import accounting.home.homeaccounting.entities.Account
-import accounting.home.homeaccounting.entities.FinOpProperty
-import accounting.home.homeaccounting.entities.OperationAdd
-import accounting.home.homeaccounting.entities.OperationModify
-import accounting.home.homeaccounting.entities.Subcategory
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 
 class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterView.OnItemClickListener, TextWatcher {
@@ -35,10 +32,10 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_newoperation)
 
-        val add_operation = findViewById<Button>(R.id.add_operation)
-        val subcategory_name = findViewById<AutoCompleteTextView>(R.id.subcategory_name)
+        val addOperation = findViewById<Button>(R.id.add_operation)
+        val subcategoryName = findViewById<AutoCompleteTextView>(R.id.subcategory_name)
         val account = findViewById<Spinner>(R.id.account)
-        val second_account = findViewById<Spinner>(R.id.second_account)
+        val secondAccount = findViewById<Spinner>(R.id.second_account)
         val network = findViewById<AutoCompleteTextView>(R.id.network)
         val type = findViewById<AutoCompleteTextView>(R.id.type)
         val amount = findViewById<EditText>(R.id.amount)
@@ -47,19 +44,19 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         mOperationId = intent.getIntExtra("operationId", -1)
         val intDate = intent.getIntExtra("date", -1)
         mDate = LocalDate.of(intDate / 10000, intDate / 100 % 100, intDate % 100)
-        add_operation.setOnClickListener(this)
+        addOperation.setOnClickListener(this)
 
         mSubcategoryAdapter = ArrayAdapter<Subcategory>(this, android.R.layout.simple_spinner_dropdown_item, SharedResources.db!!.getSubcategories())
-        subcategory_name.setAdapter<ArrayAdapter<Subcategory>>(mSubcategoryAdapter)
-        subcategory_name.threshold = 3
-        subcategory_name.onItemClickListener = this
-        subcategory_name.addTextChangedListener(this)
+        subcategoryName.setAdapter<ArrayAdapter<Subcategory>>(mSubcategoryAdapter)
+        subcategoryName.threshold = 3
+        subcategoryName.onItemClickListener = this
+        subcategoryName.addTextChangedListener(this)
 
         mAccountAdapter = ArrayAdapter<Account>(this, R.layout.textview, SharedResources.db!!.activeAccounts)
         mAccountAdapter!!.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         account.adapter = mAccountAdapter
 
-        second_account.adapter = mAccountAdapter
+        secondAccount.adapter = mAccountAdapter
 
         var items: List<String>? = SharedResources.db!!.getHints("NETW")
         if (items != null) {
@@ -76,9 +73,8 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
         mSelectedSubcategory = null
         if (mOperationId != -1) {
-            add_operation.setText(R.string.modify_operation)
-            val operation = SharedResources.operations!!.operations
-                    .first { op -> op.id == mOperationId }
+            addOperation.setText(R.string.modify_operation)
+            val operation = SharedResources.getOperation(mOperationId)
             val sc = SharedResources.db!!.getSubcategory(operation.subcategoryId)
             if (sc == null) {
                 SharedResources.alert(this, "Unknown subcategory id: " + operation.subcategoryId)
@@ -89,11 +85,11 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
                 SharedResources.alert(this, "Unknown subcategory id: " + operation.subcategoryId)
                 return
             }
-            subcategory_name.listSelection = position
-            subcategory_name.setText(sc.toString())
-            subcategory_name.performCompletion()
+            subcategoryName.listSelection = position
+            subcategoryName.setText(sc.toString())
+            subcategoryName.performCompletion()
             mSelectedSubcategory = sc
-            _updateProperties()
+            updateProperties()
 
             val accountValue = SharedResources.db!!.getAccount(operation.accountId)
             if (accountValue == null) {
@@ -112,16 +108,23 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
             fillProperties(operation.finOpProperies)
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                setResult(Activity.RESULT_CANCELED, intent)
+                finish()
+            }
+        })
     }
 
-    private fun fillProperties(finOpProperies: List<FinOpProperty>?) {
-        if (finOpProperies != null) {
-            val second_account = findViewById<Spinner>(R.id.second_account)
+    private fun fillProperties(finOpProperties: List<FinOpProperty>?) {
+        if (finOpProperties != null) {
+            val secondAccount = findViewById<Spinner>(R.id.second_account)
             val network = findViewById<AutoCompleteTextView>(R.id.network)
             val type = findViewById<AutoCompleteTextView>(R.id.type)
             val distance = findViewById<EditText>(R.id.distance)
 
-            for (property in finOpProperies) {
+            for (property in finOpProperties) {
                 when (property.propertyCode) {
                     "SECA" -> {
                         val account = SharedResources.db!!.getAccount(property.numericValue!!.toInt())
@@ -134,7 +137,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
                             SharedResources.alert(this, "Unknown account id: " + property.numericValue)
                             return
                         }
-                        second_account.setSelection(position)
+                        secondAccount.setSelection(position)
                     }
                     "DIST" -> distance.setText(property.numericValue.toString())
                     "NETW" -> network.setText(property.stringValue)
@@ -149,7 +152,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
     }
 
     private fun buildProperties(): Array<FinOpProperty>? {
-        val second_account = findViewById<Spinner>(R.id.second_account)
+        val secondAccount = findViewById<Spinner>(R.id.second_account)
         val network = findViewById<AutoCompleteTextView>(R.id.network)
         val type = findViewById<AutoCompleteTextView>(R.id.type)
         val distance = findViewById<EditText>(R.id.distance)
@@ -158,16 +161,16 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
             return null
         }
         when (mSelectedSubcategory!!.code) {
-            "EXCH", "TRFR" -> return arrayOf(FinOpProperty("SECA", BigDecimal((second_account.selectedItem as Account).id)))
+            "EXCH", "TRFR" -> return arrayOf(FinOpProperty("SECA", BigDecimal((secondAccount.selectedItem as Account).id)))
             "FUEL" -> {
                 val result = ArrayList<FinOpProperty>()
-                if (distance.text.length > 0) {
+                if (distance.text.isNotEmpty()) {
                     result.add(FinOpProperty("DIST", BigDecimal(distance.text.toString())))
                 }
-                if (network.text.length > 0) {
+                if (network.text.isNotEmpty()) {
                     result.add(FinOpProperty("NETW", network.text.toString()))
                 }
-                if (type.text.length > 0) {
+                if (type.text.isNotEmpty()) {
                     result.add(FinOpProperty("TYPE", type.text.toString()))
                 }
                 return if (result.size > 0) result.toTypedArray() else null
@@ -181,7 +184,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         val account = findViewById<Spinner>(R.id.account)
         val amount = findViewById<EditText>(R.id.amount)
 
-        if (summa.text.length == 0) {
+        if (summa.text.isEmpty()) {
             SharedResources.alert(this, R.string.empty_summa)
             return
         }
@@ -223,7 +226,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
                     if ("OK" != response) {
                         SharedResources.alert(this@NewOperationActivity, response)
                     } else {
-                        setResult(Activity.RESULT_OK)
+                        setResult(Activity.RESULT_OK, intent)
                         finish()
                     }
                 }
@@ -243,14 +246,14 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
     override fun onItemClick(parent: AdapterView<*>, view: View, position: Int, id: Long) {
         mSelectedSubcategory = parent.getItemAtPosition(position) as Subcategory
-        _updateProperties()
+        updateProperties()
     }
 
     override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
         if (mSelectedSubcategory != null) {
-            val subcategory_name = findViewById<AutoCompleteTextView>(R.id.subcategory_name)
+            val subcategoryName = findViewById<AutoCompleteTextView>(R.id.subcategory_name)
             mSelectedSubcategory = null
-            subcategory_name.setText("")
+            subcategoryName.setText("")
         }
     }
 
@@ -260,13 +263,13 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
     override fun afterTextChanged(s: Editable) {
     }
 
-    private fun _updateProperties() {
-        val parameter_label = findViewById<TextView>(R.id.parameter_label)
-        val seca_label = findViewById<TextView>(R.id.seca_label)
-        val dist_label = findViewById<TextView>(R.id.dist_label)
-        val network_label = findViewById<TextView>(R.id.network_label)
-        val type_label = findViewById<TextView>(R.id.type_label)
-        val second_account = findViewById<Spinner>(R.id.second_account)
+    private fun updateProperties() {
+        val parameterLabel = findViewById<TextView>(R.id.parameter_label)
+        val secaLabel = findViewById<TextView>(R.id.seca_label)
+        val distLabel = findViewById<TextView>(R.id.dist_label)
+        val networkLabel = findViewById<TextView>(R.id.network_label)
+        val typeLabel = findViewById<TextView>(R.id.type_label)
+        val secondAccount = findViewById<Spinner>(R.id.second_account)
         val network = findViewById<AutoCompleteTextView>(R.id.network)
         val type = findViewById<AutoCompleteTextView>(R.id.type)
         val distance = findViewById<EditText>(R.id.distance)
@@ -277,16 +280,16 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
             showSecondAccount = "EXCH" == mSelectedSubcategory!!.code || "TRFR" == mSelectedSubcategory!!.code
             showDistance = "FUEL" == mSelectedSubcategory!!.code
         }
-        parameter_label.visibility = if (showSecondAccount || showDistance) View.VISIBLE else View.GONE
+        parameterLabel.visibility = if (showSecondAccount || showDistance) View.VISIBLE else View.GONE
         var visibility = if (showSecondAccount) View.VISIBLE else View.GONE
-        seca_label.visibility = visibility
-        second_account.visibility = visibility
+        secaLabel.visibility = visibility
+        secondAccount.visibility = visibility
         visibility = if (showDistance) View.VISIBLE else View.GONE
-        dist_label.visibility = visibility
+        distLabel.visibility = visibility
         distance.visibility = visibility
-        network_label.visibility = visibility
+        networkLabel.visibility = visibility
         network.visibility = visibility
-        type_label.visibility = visibility
+        typeLabel.visibility = visibility
         type.visibility = visibility
     }
 }

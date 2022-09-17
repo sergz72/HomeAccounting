@@ -23,7 +23,6 @@
     <string name="operations">Operations</string>
     <string name="reports">Reports</string>
     <string name="gas_report">Gas report</string>
-    <string name="money_flow">Money flow on accounts</string>
     <string name="error">Error</string>
     <string name="empty_summa">Summa field cannot be empty</string>
     <string name="empty_subcategory">Subcategory field cannot be empty</string>

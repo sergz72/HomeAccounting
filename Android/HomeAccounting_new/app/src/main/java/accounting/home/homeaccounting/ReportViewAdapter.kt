@@ -80,7 +80,7 @@ class ReportViewAdapter(report: ReportsFragment) : RecyclerView.Adapter<ReportVi
         var mValutaView: TextView = v.findViewById<View>(R.id.valutaCode) as TextView
         var mIncomeView: TextView = v.findViewById<View>(R.id.income) as TextView
         var mExpenditureView: TextView = v.findViewById<View>(R.id.expenditure) as TextView
-        var mAutoSizer: ViewAutoSize? = null
+        private var mAutoSizer: ViewAutoSize? = null
 
         init {
             v.setOnClickListener(this)

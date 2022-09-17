@@ -4,15 +4,16 @@ import android.view.View
 
 class ViewAutoSize(parameters: List<AutoSizeParameters>, layoutWidth: Int, density: Float) {
     companion object {
-        val FILL = Int.MAX_VALUE
+        const val FILL = Int.MAX_VALUE
     }
 
     data class AutoSizeParameters(val viewId: Int, val minSize: Int, val maxSize: Int)
 
     private var mParameters: List<AutoSizeParameters> = parameters
-    private var mMinTotalWidthInDp = parameters.map { it.minSize }.sum()
-    private var mMinMaxTotalWidthInDp = parameters.map { if (it.maxSize == FILL) it.minSize else it.maxSize }.sum()
-    private var mMinSizeOfFillItems = parameters.filter { it.maxSize == FILL }.map { it.minSize }.sum()
+    private var mMinTotalWidthInDp = parameters.sumOf { it.minSize }
+    private var mMinMaxTotalWidthInDp =
+        parameters.sumOf { if (it.maxSize == FILL) it.minSize else it.maxSize }
+    private var mMinSizeOfFillItems = parameters.filter { it.maxSize == FILL }.sumOf { it.minSize }
     private lateinit var mWidths: Map<Int, Int>
     private var mDensity = density
 
@@ -23,10 +24,10 @@ class ViewAutoSize(parameters: List<AutoSizeParameters>, layoutWidth: Int, densi
     private fun calculateWidths(layoutWidth: Int) {
         val widthInDp = (layoutWidth / mDensity).toInt()
         if (widthInDp <= mMinTotalWidthInDp) {
-            mWidths = mParameters.map { it.viewId to it.minSize }.toMap()
+            mWidths = mParameters.associate { it.viewId to it.minSize }
         } else if (widthInDp >= mMinMaxTotalWidthInDp) {
             val delta = widthInDp - mMinMaxTotalWidthInDp
-            mWidths = mParameters.map { it.viewId to getWidth(it.minSize, it.maxSize, delta) }.toMap()
+            mWidths = mParameters.associate { it.viewId to getWidth(it.minSize, it.maxSize, delta) }
         } else {
             var totalSize = mMinTotalWidthInDp
             mWidths = mutableMapOf()
@@ -54,7 +55,7 @@ class ViewAutoSize(parameters: List<AutoSizeParameters>, layoutWidth: Int, densi
     }
 
     fun updateWidths(v :View) {
-        mWidths.forEach { it -> updateWidth(v, it.key, it.value) }
+        mWidths.forEach { updateWidth(v, it.key, it.value) }
     }
 
     private fun updateWidth(v: View, resId: Int, newWidth: Int) {

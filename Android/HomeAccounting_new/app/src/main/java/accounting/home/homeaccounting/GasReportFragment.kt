@@ -37,26 +37,26 @@ class GasReportFragment: Fragment(), IData, View.OnClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val select_date_start = requireActivity().findViewById<Button>(R.id.select_date_start)
-        val select_date_end = requireActivity().findViewById<Button>(R.id.select_date_end)
+        val selectDateStart = requireActivity().findViewById<Button>(R.id.select_date_start)
+        val selectDateEnd = requireActivity().findViewById<Button>(R.id.select_date_end)
         val generate = requireActivity().findViewById<Button>(R.id.generate)
-        val results_view = requireActivity().findViewById<RecyclerView>(R.id.results_view)
+        val resultsView = requireActivity().findViewById<RecyclerView>(R.id.results_view)
 
-        select_date_start.setOnClickListener(this)
-        select_date_end.setOnClickListener(this)
+        selectDateStart.setOnClickListener(this)
+        selectDateEnd.setOnClickListener(this)
         generate.setOnClickListener(this)
         updateDate()
 
-        results_view.hasFixedSize()
-        results_view.layoutManager = LinearLayoutManager(this.context)
-        results_view.adapter = mReportViewAdapter
+        resultsView.hasFixedSize()
+        resultsView.layoutManager = LinearLayoutManager(this.context)
+        resultsView.adapter = mReportViewAdapter
     }
 
     private fun updateDate() {
-        val date_start = requireActivity().findViewById<TextView>(R.id.date_start)
-        val date_end = requireActivity().findViewById<TextView>(R.id.date_end)
-        date_start.text = mDateStart.format(OperationsFragment.UI_DATE_FORMAT)
-        date_end.text = mDateEnd.format(OperationsFragment.UI_DATE_FORMAT)
+        val dateStart = requireActivity().findViewById<TextView>(R.id.date_start)
+        val dateEnd = requireActivity().findViewById<TextView>(R.id.date_end)
+        dateStart.text = mDateStart.format(OperationsFragment.UI_DATE_FORMAT)
+        dateEnd.text = mDateEnd.format(OperationsFragment.UI_DATE_FORMAT)
     }
 
     override fun refresh() {
@@ -94,39 +94,37 @@ class GasReportFragment: Fragment(), IData, View.OnClickListener {
         mReportViewAdapter.notifyDataSetChanged()
     }
 
-    override fun modify() {
-    }
-
-    override fun delete() {
-    }
-
     override fun add() {
     }
 
     override fun onClick(v: View?) {
-        val select_date_start = requireActivity().findViewById<Button>(R.id.select_date_start)
-        val select_date_end = requireActivity().findViewById<Button>(R.id.select_date_end)
+        val selectDateStart = requireActivity().findViewById<Button>(R.id.select_date_start)
+        val selectDateEnd = requireActivity().findViewById<Button>(R.id.select_date_end)
 
-        if (v == select_date_start) {
-            val dialog = DatePickerDialog(requireActivity(), { _, year, monthOfYear, dayOfMonth ->
-                mDateStart = LocalDate.of(year, monthOfYear + 1, dayOfMonth)
-                if (mDateEnd.isBefore(mDateStart)) {
-                    mDateEnd == mDateStart
-                }
-                updateDate()
-            }, mDateStart.year, mDateStart.monthValue - 1, mDateStart.dayOfMonth)
-            dialog.show()
-        } else if (v == select_date_end) {
-            val dialog = DatePickerDialog(requireActivity(), { _, year, monthOfYear, dayOfMonth ->
-                mDateEnd = LocalDate.of(year, monthOfYear + 1, dayOfMonth)
-                if (mDateStart.isAfter(mDateEnd)) {
-                    mDateStart == mDateEnd
-                }
-                updateDate()
-            }, mDateStart.year, mDateStart.monthValue - 1, mDateStart.dayOfMonth)
-            dialog.show()
-        } else { // Generate button
-            refresh()
+        when (v) {
+            selectDateStart -> {
+                val dialog = DatePickerDialog(requireActivity(), { _, year, monthOfYear, dayOfMonth ->
+                    mDateStart = LocalDate.of(year, monthOfYear + 1, dayOfMonth)
+                    if (mDateEnd.isBefore(mDateStart)) {
+                        mDateEnd = mDateStart
+                    }
+                    updateDate()
+                }, mDateStart.year, mDateStart.monthValue - 1, mDateStart.dayOfMonth)
+                dialog.show()
+            }
+            selectDateEnd -> {
+                val dialog = DatePickerDialog(requireActivity(), { _, year, monthOfYear, dayOfMonth ->
+                    mDateEnd = LocalDate.of(year, monthOfYear + 1, dayOfMonth)
+                    if (mDateStart.isAfter(mDateEnd)) {
+                        mDateStart = mDateEnd
+                    }
+                    updateDate()
+                }, mDateStart.year, mDateStart.monthValue - 1, mDateStart.dayOfMonth)
+                dialog.show()
+            }
+            else -> { // Generate button
+                refresh()
+            }
         }
     }
 }

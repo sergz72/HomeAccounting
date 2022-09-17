@@ -11,7 +11,11 @@ object SharedResources {
     var db: DB? = null
         private set
 
-    var operations: Operations? = null
+    var operations: List<FinanceTotalAndOperations> = listOf()
+
+    fun getOperation(operationId: Int): FinanceOperation {
+        return FinanceTotalAndOperations.getOperation(operations, operationId)
+    }
 
     fun buildDB(dicts: Dicts) {
         db = DB(dicts)
@@ -26,8 +30,8 @@ object SharedResources {
         builder.setMessage(messageId)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .setTitle(R.string.confirmation)
-                .setPositiveButton(android.R.string.yes, listener)
-                .setNegativeButton(android.R.string.no, null)
+                .setPositiveButton(android.R.string.ok, listener)
+                .setNegativeButton(android.R.string.cancel, null)
         val dialog = builder.create()
         dialog.show()
     }
@@ -59,8 +63,8 @@ object SharedResources {
                 .setRequest("GET /reports?type=gas&date1=${date1}&date2=${date2}")
     }
 
-    fun buildOperationsService(date: String): HomeAccountingService<Operations> {
-        return HomeAccountingService<Operations>()
+    fun buildOperationsService(date: String): HomeAccountingService<List<FinanceTotalAndOperations>> {
+        return HomeAccountingService<List<FinanceTotalAndOperations>>()
                 .setRequest("GET /operations/${date}")
     }
 

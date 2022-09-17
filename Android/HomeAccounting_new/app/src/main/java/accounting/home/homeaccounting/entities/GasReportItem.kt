@@ -1,6 +1,5 @@
 package accounting.home.homeaccounting.entities
 
-import accounting.home.homeaccounting.SharedResources
 import com.google.gson.annotations.JsonAdapter
 import com.google.gson.annotations.SerializedName
 import java.time.LocalDate

@@ -16,7 +16,17 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
+            app:popupTheme="@style/AppTheme.PopupOverlay">
+            <ImageButton
+                android:id="@+id/bnAdd"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_menu_add"
+                android:background="@color/colorTransparent"
+                android:contentDescription="@string/action_add"
+                android:layout_gravity="end"
+                />
+        </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 

@@ -1,11 +1,13 @@
 package accounting.home.homeaccounting
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 
 const val RESET_SEQUENCE = "727348487273"
@@ -20,13 +22,13 @@ class PinActivity: AppCompatActivity(), View.OnClickListener {
     private lateinit var mSettings: SharedPreferences
 
     private fun updatePinLabel() {
-        val pin_label = findViewById<TextView>(R.id.pin_label)
+        val pinLabel = findViewById<TextView>(R.id.pin_label)
         if (mSavedPin.isNotEmpty()) {
-            pin_label.text = resources.getString(R.string.enterPinAgain)
+            pinLabel.text = resources.getString(R.string.enterPinAgain)
         } else if (mPin != null) {
-            pin_label.text = resources.getString(R.string.enterPin)
+            pinLabel.text = resources.getString(R.string.enterPin)
         } else {
-            pin_label.text = resources.getString(R.string.setPin)
+            pinLabel.text = resources.getString(R.string.setPin)
         }
     }
 
@@ -64,8 +66,16 @@ class PinActivity: AppCompatActivity(), View.OnClickListener {
         num9.setOnClickListener(this)
         del.setOnClickListener(this)
         ok.setOnClickListener(this)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                setResult(Activity.RESULT_CANCELED, intent)
+                finish()
+            }
+        })
     }
 
+    @SuppressLint("SetTextI18n")
     private fun add(char: Char) {
         val pin = findViewById<TextView>(R.id.pin)
         mEnteredPin += char
@@ -137,7 +147,7 @@ class PinActivity: AppCompatActivity(), View.OnClickListener {
             if (mEnteredPin != mPin)
             {
                 if (mTries-- == 0) {
-                    setResult(Activity.RESULT_CANCELED)
+                    setResult(Activity.RESULT_CANCELED, intent)
                     finish()
                     return
                 }
@@ -165,7 +175,7 @@ class PinActivity: AppCompatActivity(), View.OnClickListener {
                 }
             }
         }
-        setResult(Activity.RESULT_OK)
+        setResult(Activity.RESULT_OK, intent)
         finish()
     }
 }

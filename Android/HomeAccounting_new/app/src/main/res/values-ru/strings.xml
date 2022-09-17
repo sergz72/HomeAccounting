@@ -23,7 +23,6 @@
     <string name="operations">Операции</string>
     <string name="reports">Отчеты</string>
     <string name="gas_report">Отчет по бензину</string>
-    <string name="money_flow">Движение по счетам</string>
     <string name="error">Ошибка</string>
     <string name="empty_summa">Сумма должна быть заполнена</string>
     <string name="empty_subcategory">Субкатегория должна быть заполнена</string>
