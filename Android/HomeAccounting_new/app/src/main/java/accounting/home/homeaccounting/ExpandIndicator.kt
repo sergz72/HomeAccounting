@@ -20,21 +20,19 @@ class ExpandIndicator(context: Context?, attrs: AttributeSet?) : View(context, a
         invalidate()
     }
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (isExpanded != null) {
             val w2 = (width / 2).toFloat()
             val h = height.toFloat()
             val start = w2 - h / 2
             val end = w2 + h / 2
-            if (canvas != null) {
-                if (isExpanded!!) {
-                    canvas.drawLine(start, h, w2, 0f, mIndicatorPaint)
-                    canvas.drawLine(w2, 0f, end, h, mIndicatorPaint)
-                } else {
-                    canvas.drawLine(start, 0f, w2, h, mIndicatorPaint)
-                    canvas.drawLine(w2, h, end, 0f, mIndicatorPaint)
-                }
+            if (isExpanded!!) {
+                canvas.drawLine(start, h, w2, 0f, mIndicatorPaint)
+                canvas.drawLine(w2, 0f, end, h, mIndicatorPaint)
+            } else {
+                canvas.drawLine(start, 0f, w2, h, mIndicatorPaint)
+                canvas.drawLine(w2, h, end, 0f, mIndicatorPaint)
             }
         }
     }

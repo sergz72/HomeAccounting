@@ -106,7 +106,7 @@ class OperationsFragment : Fragment(), IData, View.OnClickListener, OperationsVi
                 return false
             }
 
-            override fun onResponse(response: List<FinanceTotalAndOperations>) {
+            override fun onResponse(response: List<FinanceTotalAndOperations>, compressed: ByteArray) {
                 SharedResources.operations = response
                 mHandler.post { showResults(response) }
             }
@@ -151,7 +151,7 @@ class OperationsFragment : Fragment(), IData, View.OnClickListener, OperationsVi
                     return true
                 }
 
-                override fun onResponse(response: String) {
+                override fun onResponse(response: String, compressed: ByteArray) {
                     mHandler.post {
                         if ("OK" != response) {
                             SharedResources.alert(activity!!, response)

@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 const val RESET_SEQUENCE = "727348487273"
 const val RESET_SEQUENCE2 = "487273"
 
-class PinActivity: AppCompatActivity(), View.OnClickListener {
+class PinActivity: AppCompatActivity(), View.OnClickListener, View.OnLongClickListener {
     private var mPin: String? = null
     private var mEnteredPin = ""
     private var mAllPin = ""
@@ -66,6 +66,8 @@ class PinActivity: AppCompatActivity(), View.OnClickListener {
         num9.setOnClickListener(this)
         del.setOnClickListener(this)
         ok.setOnClickListener(this)
+        ok.isLongClickable = true
+        ok.setOnLongClickListener(this)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -124,11 +126,22 @@ class PinActivity: AppCompatActivity(), View.OnClickListener {
             num8 -> add('8')
             num9 -> add('9')
             del -> del()
-            ok -> checkPin()
+            ok -> checkPin(Activity.RESULT_OK)
         }
     }
 
-    private fun checkPin() {
+    override fun onLongClick(v: View?): Boolean {
+        val ok = findViewById<Button>(R.id.ok)
+        if (v == ok) {
+            SharedResources.confirm(this, R.string.operation_update_dicts) { _, _ ->
+                checkPin(Activity.RESULT_FIRST_USER)
+            }
+            return true
+        }
+        return false
+    }
+
+    private fun checkPin(resultCode: Int) {
         val errorMessage = findViewById<TextView>(R.id.errorMessage)
         if (mEnteredPin.length < 4) {
             clear()
@@ -175,7 +188,7 @@ class PinActivity: AppCompatActivity(), View.OnClickListener {
                 }
             }
         }
-        setResult(Activity.RESULT_OK, intent)
+        setResult(resultCode, intent)
         finish()
     }
 }

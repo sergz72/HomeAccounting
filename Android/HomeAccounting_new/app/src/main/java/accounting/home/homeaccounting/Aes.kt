@@ -9,6 +9,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+data class AesDecodeResult(val compressed: ByteArray, val uncompressed: String)
 
 object Aes {
     private lateinit var mKey: SecretKeySpec
@@ -29,16 +30,17 @@ object Aes {
         return iv.plus(cipher.doFinal(command.toByteArray()))
     }
 
-    fun decode(body: ByteArray, length: Int): String {
+    fun decode(body: ByteArray, length: Int): AesDecodeResult {
         val iv = body.sliceArray(IntRange(0, 11))
         val encoded = body.sliceArray(IntRange(12, length - 1))
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val parameterSpec = GCMParameterSpec(128, iv)
         cipher.init(Cipher.DECRYPT_MODE, mKey, parameterSpec)
-        return unzip(cipher.doFinal(encoded))
+        val compressed = cipher.doFinal(encoded)
+        return AesDecodeResult(compressed, unzip(compressed))
     }
 
-    private fun unzip(decoded: ByteArray): String {
+    fun unzip(decoded: ByteArray): String {
         val inStream = GZIPInputStream(ByteArrayInputStream(decoded))
         inStream.use {
             return inStream.readBytes().toString(Charsets.UTF_8)

@@ -10,9 +10,11 @@ import androidx.appcompat.app.AppCompatActivity
 import accounting.home.homeaccounting.entities.Dicts
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
 import android.view.View
 import android.widget.ImageButton
 import androidx.activity.OnBackPressedCallback
@@ -23,11 +25,20 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.navigation.NavigationView
 import com.google.gson.Gson
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.time.LocalDate
+
+private val Context.dataStore by preferencesDataStore(name = "settings")
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
     OperationsFragment.OnFragmentInteractionListener, View.OnClickListener,
@@ -39,6 +50,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         internal const val MODIFYOPERATION = 3
         internal const val PINCHECK = 4
     }
+
+    private val mDictsKey = stringPreferencesKey("dicts")
 
     private val mHandler = Handler(Looper.getMainLooper())
 
@@ -111,6 +124,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         if (SharedResources.db != null) {
             val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
             if (fragment != null) {
+                if (fragment is OperationsFragment) {
+                    fragment.refresh()
+                    return
+                }
                 mHistory.add(fragment)
             }
             val newFragment = OperationsFragment()
@@ -156,6 +173,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun updateDicts() {
+        lifecycleScope.launch{
+            val dictsString = dataStore.data
+                .map { preferences ->
+                    // No type safety.
+                    preferences[mDictsKey] ?: ""
+                }.first()
+            if (dictsString.isNotEmpty()) {
+                val decoded = Base64.decode(dictsString, Base64.DEFAULT)
+                val uncompressed = Aes.unzip(decoded)
+                val dicts = Gson().fromJson(uncompressed, Dicts::class.java)
+                SharedResources.buildDB(dicts)
+                mHandler.post { showOperationsFragment() }
+                return@launch
+            }
+            forceUpdateDicts()
+        }
+    }
+
+    private fun forceUpdateDicts() {
         val call = SharedResources.buildDictsService()
         call.doInBackground(object : HomeAccountingService.Callback<Dicts> {
             override fun deserialize(response: String): Dicts {
@@ -166,7 +202,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 return false
             }
 
-            override fun onResponse(response: Dicts) {
+            override fun onResponse(response: Dicts, compressed: ByteArray) {
+                lifecycleScope.launch {
+                    val encoded = Base64.encodeToString(compressed, Base64.DEFAULT)
+                    dataStore.edit { settings ->
+                        settings[mDictsKey] = encoded
+                    }
+                }
                 SharedResources.buildDB(response)
                 mHandler.post { showOperationsFragment() }
             }
@@ -217,6 +259,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 mActivityResultLauncher!!.launch(intent)
                 return true
             }
+            R.id.action_update_dicts -> {
+                forceUpdateDicts()
+            }
             R.id.action_refresh -> {
                 refresh()
                 return true
@@ -252,10 +297,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         } else if ((requestCode == NEWOPERATION || requestCode == MODIFYOPERATION) && result.resultCode == Activity.RESULT_OK) {
             refresh()
         } else if (requestCode == PINCHECK) {
-            if (result.resultCode == Activity.RESULT_OK) {
-                updateServer()
-            } else {
-                finish()
+            when (result.resultCode) {
+                Activity.RESULT_OK -> {
+                    updateServer()
+                }
+                Activity.RESULT_FIRST_USER -> {
+                    updateServer()
+                    forceUpdateDicts()
+                }
+                else -> {
+                    finish()
+                }
             }
         }
     }

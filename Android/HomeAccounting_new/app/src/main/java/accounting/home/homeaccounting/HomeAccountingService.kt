@@ -31,7 +31,7 @@ class HomeAccountingService<T> {
     interface Callback<T> {
         fun deserialize(response: String): T
         fun isString(): Boolean
-        fun onResponse(response: T)
+        fun onResponse(response: T, compressed: ByteArray)
         fun onFailure(t: Throwable?, response: String?)
     }
 
@@ -57,12 +57,13 @@ class HomeAccountingService<T> {
                     val body = Aes.decode(inPacket.data, inPacket.length)
                     if (callback.isString()) {
                         @Suppress("UNCHECKED_CAST")
-                        callback.onResponse(body as T)
+                        callback.onResponse(body.uncompressed as T, body.compressed)
                     } else {
-                        if (body.isEmpty() || (body[0] != '{' && body[0] != '[')) {
-                            callback.onFailure(null, body)
+                        if (body.uncompressed.isEmpty() ||
+                            (body.uncompressed[0] != '{' && body.uncompressed[0] != '[')) {
+                            callback.onFailure(null, body.uncompressed)
                         } else {
-                            callback.onResponse(callback.deserialize(body))
+                            callback.onResponse(callback.deserialize(body.uncompressed), body.compressed)
                         }
                     }
                 } catch (e: Exception) {

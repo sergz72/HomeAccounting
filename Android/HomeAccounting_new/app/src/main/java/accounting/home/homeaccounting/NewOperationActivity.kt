@@ -221,7 +221,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
                 return true
             }
 
-            override fun onResponse(response: String) {
+            override fun onResponse(response: String, compressed: ByteArray) {
                 mHandler.post {
                     if ("OK" != response) {
                         SharedResources.alert(this@NewOperationActivity, response)

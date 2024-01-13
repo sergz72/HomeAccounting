@@ -168,7 +168,7 @@ class ReportsFragment : Fragment(R.layout.fragment_reports), IData, View.OnClick
                 return false
             }
 
-            override fun onResponse(response: List<ReportItem>) {
+            override fun onResponse(response: List<ReportItem>, compressed: ByteArray) {
                 mHandler.post { showResults(response) }
             }
 

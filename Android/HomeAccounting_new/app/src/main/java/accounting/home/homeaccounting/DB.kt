@@ -8,11 +8,11 @@ import kotlin.math.abs
 
 class DB(dictsIn: Dicts) {
     private var dicts: Dicts = dictsIn
-    private var accountMap: Map<Int, Account> = dictsIn.accounts.map { it.id to it }.toMap()
+    private var accountMap: Map<Int, Account> = dictsIn.accounts.associateBy { it.id }
     var activeAccounts: List<Account> = dictsIn.accounts.filter { account -> account.activeTo == null }.toList()
         private set
-    private var categories: Map<Int, String> = dictsIn.categories.map { it.id to it.name }.toMap()
-    private var subcategoryMap: Map<Int, Subcategory> = dictsIn.subcategories.map { it.id to it }.toMap()
+    private var categories: Map<Int, String> = dictsIn.categories.associate { it.id to it.name }
+    private var subcategoryMap: Map<Int, Subcategory> = dictsIn.subcategories.associateBy { it.id }
 
     fun getCategoryNameBySubcategoryId(subcategoryId: Int): String {
         val category = subcategoryMap.getValue(subcategoryId).categoryId.toInt()

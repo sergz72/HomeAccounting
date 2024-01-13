@@ -73,7 +73,7 @@ class GasReportFragment: Fragment(), IData, View.OnClickListener {
                 return false
             }
 
-            override fun onResponse(response: List<GasReportItem>) {
+            override fun onResponse(response: List<GasReportItem>, compressed: ByteArray) {
                 mHandler.post { showResults(response) }
             }
 

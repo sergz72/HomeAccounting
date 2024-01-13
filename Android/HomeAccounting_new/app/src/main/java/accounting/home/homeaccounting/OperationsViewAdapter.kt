@@ -82,7 +82,7 @@ class OperationsViewAdapter(val context: Context, private val executor: OpExecut
         incomeView.text = SharedResources.db!!.formatMoney(ft.summaIncome)
         expenditureView.text = SharedResources.db!!.formatMoney(ft.summaExpenditure)
         balanceView.text = SharedResources.db!!.formatMoney(ft.balance)
-        if (ft.operations != null && ft.operations.isNotEmpty()) {
+        if (!ft.operations.isNullOrEmpty()) {
             indicatorView.setExpanded(isExpanded)
         } else {
             indicatorView.setExpanded(null)
