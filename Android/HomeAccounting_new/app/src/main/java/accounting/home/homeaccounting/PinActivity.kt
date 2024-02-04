@@ -1,6 +1,5 @@
 package accounting.home.homeaccounting
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -10,16 +9,14 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 
-const val RESET_SEQUENCE = "727348487273"
-const val RESET_SEQUENCE2 = "487273"
+const val RESET_SEQUENCE = "(727348)"
 
 class PinActivity: AppCompatActivity(), View.OnClickListener, View.OnLongClickListener {
     private var mPin: String? = null
-    private var mEnteredPin = ""
-    private var mAllPin = ""
     private var mSavedPin = ""
     private var mTries = 3
     private lateinit var mSettings: SharedPreferences
+    private lateinit var mKeyboard: NumericKeyboard
 
     private fun updatePinLabel() {
         val pinLabel = findViewById<TextView>(R.id.pin_label)
@@ -41,30 +38,12 @@ class PinActivity: AppCompatActivity(), View.OnClickListener, View.OnLongClickLi
 
         updatePinLabel()
 
-        val num0 = findViewById<Button>(R.id.num0)
-        val num1 = findViewById<Button>(R.id.num1)
-        val num2 = findViewById<Button>(R.id.num2)
-        val num3 = findViewById<Button>(R.id.num3)
-        val num4 = findViewById<Button>(R.id.num4)
-        val num5 = findViewById<Button>(R.id.num5)
-        val num6 = findViewById<Button>(R.id.num6)
-        val num7 = findViewById<Button>(R.id.num7)
-        val num8 = findViewById<Button>(R.id.num8)
-        val num9 = findViewById<Button>(R.id.num9)
-        val del = findViewById<Button>(R.id.del)
+        mKeyboard = findViewById(R.id.keyboard)
+        mKeyboard.textControl = findViewById(R.id.pin)
+        mKeyboard.isMasked = true
+
         val ok = findViewById<Button>(R.id.ok)
 
-        num0.setOnClickListener(this)
-        num1.setOnClickListener(this)
-        num2.setOnClickListener(this)
-        num3.setOnClickListener(this)
-        num4.setOnClickListener(this)
-        num5.setOnClickListener(this)
-        num6.setOnClickListener(this)
-        num7.setOnClickListener(this)
-        num8.setOnClickListener(this)
-        num9.setOnClickListener(this)
-        del.setOnClickListener(this)
         ok.setOnClickListener(this)
         ok.isLongClickable = true
         ok.setOnLongClickListener(this)
@@ -77,57 +56,8 @@ class PinActivity: AppCompatActivity(), View.OnClickListener, View.OnLongClickLi
         })
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun add(char: Char) {
-        val pin = findViewById<TextView>(R.id.pin)
-        mEnteredPin += char
-        mAllPin += char
-        pin.text = pin.text.toString() + '*'
-    }
-
-    private fun clear() {
-        val pin = findViewById<TextView>(R.id.pin)
-        mAllPin = ""
-        mEnteredPin = ""
-        pin.text = ""
-    }
-
-    private fun del() {
-        if (mEnteredPin.isNotEmpty())  {
-            val pin = findViewById<TextView>(R.id.pin)
-            mEnteredPin = mEnteredPin.substring(0, mEnteredPin.length - 1)
-            pin.text = pin.text.toString().substring(0, pin.text.length - 1)
-        }
-    }
-
     override fun onClick(v: View) {
-        val num0 = findViewById<Button>(R.id.num0)
-        val num1 = findViewById<Button>(R.id.num1)
-        val num2 = findViewById<Button>(R.id.num2)
-        val num3 = findViewById<Button>(R.id.num3)
-        val num4 = findViewById<Button>(R.id.num4)
-        val num5 = findViewById<Button>(R.id.num5)
-        val num6 = findViewById<Button>(R.id.num6)
-        val num7 = findViewById<Button>(R.id.num7)
-        val num8 = findViewById<Button>(R.id.num8)
-        val num9 = findViewById<Button>(R.id.num9)
-        val del = findViewById<Button>(R.id.del)
-        val ok = findViewById<Button>(R.id.ok)
-
-        when (v) {
-            num0 -> add('0')
-            num1 -> add('1')
-            num2 -> add('2')
-            num3 -> add('3')
-            num4 -> add('4')
-            num5 -> add('5')
-            num6 -> add('6')
-            num7 -> add('7')
-            num8 -> add('8')
-            num9 -> add('9')
-            del -> del()
-            ok -> checkPin(Activity.RESULT_OK)
-        }
+        checkPin(Activity.RESULT_OK)
     }
 
     override fun onLongClick(v: View?): Boolean {
@@ -143,44 +73,44 @@ class PinActivity: AppCompatActivity(), View.OnClickListener, View.OnLongClickLi
 
     private fun checkPin(resultCode: Int) {
         val errorMessage = findViewById<TextView>(R.id.errorMessage)
-        if (mEnteredPin.length < 4) {
-            clear()
+        if (mKeyboard.value.length < 4) {
+            mKeyboard.clear()
             errorMessage.text = resources.getString(R.string.shortPin)
             return
         }
         if (mPin != null)
         {
-            if (RESET_SEQUENCE == mAllPin && RESET_SEQUENCE2 == mEnteredPin && mSavedPin == "") {
+            if (RESET_SEQUENCE == mKeyboard.value) {
                 mPin = null
-                clear()
+                mKeyboard.clear()
                 updatePinLabel()
                 errorMessage.text = ""
                 return
             }
-            if (mEnteredPin != mPin)
+            if (mKeyboard.value != mPin)
             {
                 if (mTries-- == 0) {
                     setResult(Activity.RESULT_CANCELED, intent)
                     finish()
                     return
                 }
-                clear()
+                mKeyboard.clear()
                 errorMessage.text = resources.getString(R.string.wrongPin)
                 return
             }
         } else {
             if (mSavedPin.isEmpty()) {
-                mSavedPin = mEnteredPin
-                clear()
+                mSavedPin = mKeyboard.value
+                mKeyboard.clear()
                 updatePinLabel()
                 return
             } else {
-                if (mSavedPin == mEnteredPin) {
+                if (mSavedPin == mKeyboard.value) {
                     val editor = mSettings.edit()
-                    editor.putString("pin", mEnteredPin)
+                    editor.putString("pin", mKeyboard.value)
                     editor.apply()
                 } else {
-                    clear()
+                    mKeyboard.clear()
                     mSavedPin = ""
                     updatePinLabel()
                     errorMessage.text = resources.getString(R.string.wrongPin)

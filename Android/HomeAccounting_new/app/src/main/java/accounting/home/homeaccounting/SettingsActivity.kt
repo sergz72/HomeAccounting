@@ -66,7 +66,7 @@ class SettingsActivity : AppCompatActivity(), SharedPreferences.OnSharedPreferen
         mResult = Activity.RESULT_OK
     }
 
-    fun backPressed() {
+    private fun backPressed() {
         setResult(mResult, intent)
         finish()
     }

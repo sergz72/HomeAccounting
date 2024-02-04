@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 
 android {
     defaultConfig {
-        compileSdkVersion 34
+        compileSdk 34
         applicationId "accounting.home.homeaccounting"
         minSdkVersion 33
         versionCode 1

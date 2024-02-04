@@ -11,13 +11,16 @@ import java.time.LocalDate
 import java.util.ArrayList
 
 import android.app.Activity
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 
-class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterView.OnItemClickListener, TextWatcher {
+class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterView.OnItemClickListener, TextWatcher,
+    View.OnFocusChangeListener {
     private var mSelectedSubcategory: Subcategory? = null
 
     private var mAccountAdapter: ArrayAdapter<Account>? = null
@@ -108,6 +111,11 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
             fillProperties(operation.finOpProperies)
         }
+
+        amount.showSoftInputOnFocus = false
+        amount.onFocusChangeListener = this
+        summa.showSoftInputOnFocus = false
+        summa.onFocusChangeListener = this
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -291,5 +299,21 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         network.visibility = visibility
         typeLabel.visibility = visibility
         type.visibility = visibility
+    }
+
+    override fun onFocusChange(v: View?, hasFocus: Boolean) {
+        val keyboard = findViewById<NumericKeyboard>(R.id.keyboard)
+        if (hasFocus) {
+            val view = currentFocus
+            if (view != null) {
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+                imm!!.hideSoftInputFromWindow(view.windowToken, 0)
+            }
+            keyboard.textControl = v as EditText
+            keyboard.visibility = View.VISIBLE
+        } else {
+            keyboard.textControl = null
+            keyboard.visibility = View.GONE
+        }
     }
 }
