@@ -5,13 +5,13 @@ import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
-import java.nio.file.OpenOption
 import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
+import javax.crypto.Cipher
+import javax.crypto.spec.ChaCha20ParameterSpec
+import javax.crypto.spec.SecretKeySpec
 import kotlin.io.path.createDirectory
-import kotlin.io.path.createFile
 import kotlin.io.path.exists
-import kotlin.io.path.writeBytes
+import kotlin.random.Random
 
 fun usage() {
     println("Usage: java -jar home_accounting_converter.jar keyFileName sourceFolder destFolder dicts")
@@ -28,6 +28,8 @@ fun main(args: Array<String>) {
     val destFolder = args[2]
     val entityName = args[3]
 
+    val key = SecretKeySpec(keyBytes, 0, keyBytes.size, "ChaCha20")
+
     println("Reading dicts...")
     val accounts = Account.fromJson(Paths.get(sourceFolder, "accounts.json"))
     val categories = Category.fromJson(Paths.get(sourceFolder, "categories.json"))
@@ -35,13 +37,13 @@ fun main(args: Array<String>) {
     val dicts = Dicts(accounts, categories, subcategories)
 
     when (entityName) {
-        "dicts" -> convertDicts(dicts, sourceFolder, destFolder)
-        "operations" -> convertOperations(dicts, sourceFolder, destFolder)
+        "dicts" -> convertDicts(key, dicts, destFolder)
+        "operations" -> convertOperations(key, dicts, sourceFolder, destFolder)
         else -> usage()
     }
 }
 
-fun convertOperations(dicts: Dicts, sourceFolder: String, destFolder: String) {
+fun convertOperations(key: SecretKeySpec, dicts: Dicts, sourceFolder: String, destFolder: String) {
     println("Reading...")
     val operations = FinanceRecord.fromJson(Paths.get(sourceFolder, "dates"))
     println("Calculating totals...")
@@ -50,13 +52,14 @@ fun convertOperations(dicts: Dicts, sourceFolder: String, destFolder: String) {
     db.printChanges(0)
     println("Converting...")
     for ((date, operation) in operations) {
-        save(destFolder, date / 10000, date, operation.toBinary())
+        save(key, destFolder, date / 10000, date, operation.toBinary())
     }
     println("Writing...")
     println("Validating...")
 }
 
-fun save(destFolder: String, folderId: Int, fileId: Int, data: ByteArray) {
+fun save(key: SecretKeySpec, destFolder: String, folderId: Int, fileId: Int, data: ByteArray) {
+    val encrypted = encrypt(key, data)
     val folderPath = Paths.get(destFolder, folderId.toString())
     val filePath = Paths.get(destFolder, folderId.toString(), fileId.toString())
     if (!folderPath.exists()) {
@@ -67,15 +70,36 @@ fun save(destFolder: String, folderId: Int, fileId: Int, data: ByteArray) {
         stream.write(0)
         stream.write(0)
         stream.write(0)
-        stream.write(data)
+        stream.write(encrypted)
     }
 }
 
-fun convertDicts(dicts: Dicts, sourceFolder: String, destFolder: String) {
+fun encrypt(key: SecretKeySpec, data: ByteArray): ByteArray {
+    val cipher = Cipher.getInstance("ChaCha20")
+    val iv = Random.nextBytes(12)
+    val param = ChaCha20ParameterSpec(iv, 0)
+    cipher.init(Cipher.ENCRYPT_MODE, key, param)
+    val encrypted = cipher.doFinal(data)
+    val buffer = ByteBuffer.allocate(encrypted.size + iv.size)
+    buffer.put(iv)
+    buffer.put(encrypted)
+    return buffer.array()
+}
+
+fun decrypt(key: SecretKeySpec, data: ByteArray): ByteArray {
+    val cipher = Cipher.getInstance("ChaCha20")
+    val iv = data.copyOfRange(0, 12)
+    val param = ChaCha20ParameterSpec(iv, 0)
+    cipher.init(Cipher.DECRYPT_MODE, key, param)
+    val decrypted = cipher.doFinal(data)
+    return decrypted.copyOfRange(12, decrypted.size)
+}
+
+fun convertDicts(key: SecretKeySpec, dicts: Dicts, destFolder: String) {
     println("Converting...")
     val data = dicts.toBinary()
     println("Writing...")
-    save(destFolder, 0, 0, data)
+    save(key, destFolder, 0, 0, data)
     println("Validating...")
     val dicts2 = Dicts.fromBinary(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN))
     compareAccounts(dicts.accounts, dicts2.accounts)
