@@ -12,7 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
 fun usage() {
-    println("Usage: java -jar home_accounting_query.jar keyFileName hostName port db_name")
+    println("Usage: java -jar home_accounting_query.jar serverKeyFileName keyFileName hostName port db_name")
 }
 
 fun help() {
@@ -20,17 +20,18 @@ fun help() {
 }
 
 suspend fun main(args: Array<String>) {
-    if (args.size != 4) {
+    if (args.size != 5) {
         usage()
         return
     }
-    val keyBytes = Files.readAllBytes(Paths.get(args[0]))
-    val hostName = args[1]
-    val port = args[2].toInt()
-    val dbName = args[3]
+    val serverKeyBytes = Files.readAllBytes(Paths.get(args[0]))
+    val keyBytes = Files.readAllBytes(Paths.get(args[1]))
+    val hostName = args[2]
+    val port = args[3].toInt()
+    val dbName = args[4]
 
-    val fileService = FileService(keyBytes, hostName, port, dbName)
-    val service = HomeAccountingService(fileService)
+    val fileService = FileService(serverKeyBytes, hostName, port, dbName)
+    val service = HomeAccountingService(fileService, keyBytes)
 
     val dateNow = LocalDateTime.now()
     val now = dateNow.year * 10000 + dateNow.month.value * 100 + dateNow.dayOfMonth
