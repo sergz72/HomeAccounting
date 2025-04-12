@@ -6,6 +6,9 @@ import com.sz.file_server.lib.GetResponse
 import com.sz.home_accounting.query.entities.Dicts
 import com.sz.home_accounting.query.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService.Callback
+import jdk.internal.jimage.decompressor.CompressIndexes.decompress
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
+import java.io.ByteArrayInputStream
 import javax.crypto.Cipher
 import javax.crypto.spec.ChaCha20ParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -50,7 +53,8 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
                     if (response.data.isEmpty())
                         throw IllegalStateException("Empty response")
                     val decrypted = decrypt(response.data[0]!!.data)
-                    dicts = Dicts.fromBinary(decrypted)
+                    val decompressed = decompress(decrypted)
+                    dicts = Dicts.fromBinary(decompressed)
                     dbVersion = response.dbVersion
                     callback.onResponse(Unit)
                 } catch (t: Throwable) {
@@ -77,11 +81,20 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
         return buffer.array()
     }
 
-    fun decrypt(data: ByteArray): ByteArray {
+    private fun decrypt(data: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("ChaCha20")
         val iv = data.copyOfRange(0, 12)
         val param = ChaCha20ParameterSpec(iv, 0)
         cipher.init(Cipher.DECRYPT_MODE, key, param)
         return cipher.doFinal(data.copyOfRange(12, data.size))
+    }
+
+    private fun decompress(decrypted: ByteArray): ByteArray {
+        val inStream = BZip2CompressorInputStream(ByteArrayInputStream(decrypted))
+        inStream.use {
+            val result = inStream.readBytes()
+            println("Decompressed size = ${result.size}")
+            return result
+        }
     }
 }
