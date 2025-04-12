@@ -6,7 +6,6 @@ import com.sz.file_server.lib.GetResponse
 import com.sz.home_accounting.query.entities.Dicts
 import com.sz.home_accounting.query.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService.Callback
-import jdk.internal.jimage.decompressor.CompressIndexes.decompress
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 import java.io.ByteArrayInputStream
 import javax.crypto.Cipher
@@ -17,11 +16,8 @@ import java.nio.ByteBuffer
 
 class HomeAccountingService(private val fileService: FileService, keyBytes: ByteArray) {
     private val key = SecretKeySpec(keyBytes, 0, keyBytes.size, "ChaCha20")
-    private var dicts: Dicts? = null
+    var dicts: Dicts? = null
     private var dbVersion: Int = 0
-
-    val initialized: Boolean
-        get() = dicts != null
 
     fun getFinanceRecord(date: Int, callback: Callback<Pair<Int, FinanceRecord>>) {
         fileService.getLast(1, date, object: Callback<GetLastResponse> {

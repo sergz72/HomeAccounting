@@ -1,6 +1,7 @@
 package com.sz.home_accounting.query
 
 import com.sz.file_server.lib.FileService
+import com.sz.home_accounting.query.entities.Dicts
 import com.sz.home_accounting.query.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -16,7 +17,7 @@ fun usage() {
 }
 
 fun help() {
-    println("Commands:\ntoday\ndate YYYYMMDD\nadd subcategory[/category] account summa")
+    println("Commands:\nexit\ntoday\ndate YYYYMMDD\nadd subcategory[/category] account summa")
 }
 
 suspend fun main(args: Array<String>) {
@@ -38,12 +39,14 @@ suspend fun main(args: Array<String>) {
     do {
         getDicts(service, channel)
         channel.receive()
-    } while (!service.initialized)
+    } while (service.dicts == null)
+
+    val db = DB(service.dicts!!)
 
     val dateNow = LocalDateTime.now()
     val now = dateNow.year * 10000 + dateNow.month.value * 100 + dateNow.dayOfMonth
 
-    showFinanceRecord(service, channel, now)
+    showFinanceRecord(service, db, channel, now)
     channel.receive()
 
     while (true) {
@@ -58,19 +61,20 @@ suspend fun main(args: Array<String>) {
                         if (parts.size != 1) {
                             help()
                         } else
-                            showFinanceRecord(service, channel, now)
+                            showFinanceRecord(service, db, channel, now)
                     }
 
                     "date" -> {
                         if (parts.size != 2 || parts[1].length != 8) {
                             help()
                         } else {
-                            showFinanceRecord(service, channel, parts[1].toInt())
+                            showFinanceRecord(service, db, channel, parts[1].toInt())
                         }
                     }
                     "add" -> {
 
                     }
+                    "exit" -> return
                     else -> help()
                 }
                 channel.receive()
@@ -82,20 +86,11 @@ suspend fun main(args: Array<String>) {
 }
 
 @OptIn(DelicateCoroutinesApi::class)
-fun showFinanceRecord(service: HomeAccountingService, channel: Channel<Unit>, date: Int) {
+fun showFinanceRecord(service: HomeAccountingService, db: DB, channel: Channel<Unit>, date: Int) {
     service.getFinanceRecord(date, object: NetworkService.Callback<Pair<Int, FinanceRecord>> {
         override fun onResponse(response: Pair<Int, FinanceRecord>) {
-            println(response.first)
-            println("Totals:")
-            for (total in response.second.totals) {
-                println("${total.key} ${total.value}")
-            }
-            println("Operations:")
-            var n = 1;
-            for (op in response.second.operations) {
-                println("$n ${op.account} amount=${op.amount} summa=${op.summa}")
-                n++
-            }
+            db.data = sortedMapOf(response)
+            db.printChanges(0)
             GlobalScope.launch { channel.send(Unit) }
         }
 
