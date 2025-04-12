@@ -2,6 +2,8 @@ package com.sz.home_accounting.query
 
 import com.sz.file_server.lib.FileService
 import com.sz.file_server.lib.GetLastResponse
+import com.sz.file_server.lib.GetResponse
+import com.sz.home_accounting.query.entities.Dicts
 import com.sz.home_accounting.query.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService.Callback
 import javax.crypto.Cipher
@@ -11,7 +13,12 @@ import kotlin.random.Random
 import java.nio.ByteBuffer
 
 class HomeAccountingService(private val fileService: FileService, keyBytes: ByteArray) {
-    val key = SecretKeySpec(keyBytes, 0, keyBytes.size, "ChaCha20")
+    private val key = SecretKeySpec(keyBytes, 0, keyBytes.size, "ChaCha20")
+    private var dicts: Dicts? = null
+    private var dbVersion: Int = 0
+
+    val initialized: Boolean
+        get() = dicts != null
 
     fun getFinanceRecord(date: Int, callback: Callback<Pair<Int, FinanceRecord>>) {
         fileService.getLast(1, date, object: Callback<GetLastResponse> {
@@ -23,6 +30,7 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
                     } else {
                         FinanceRecord.create()
                     }
+                    dbVersion = response.dbVersion
                     callback.onResponse((response.data?.first ?: date) to record)
                 } catch (t: Throwable) {
                     callback.onFailure(t)
@@ -32,6 +40,28 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
             override fun onFailure(t: Throwable) {
                 callback.onFailure(t)
             }
+        })
+    }
+
+    fun getDicts(callback: Callback<Unit>) {
+        fileService.get(0, 0, object: Callback<GetResponse> {
+            override fun onResponse(response: GetResponse) {
+                try {
+                    if (response.data.isEmpty())
+                        throw IllegalStateException("Empty response")
+                    val decrypted = decrypt(response.data[0]!!.data)
+                    dicts = Dicts.fromBinary(decrypted)
+                    dbVersion = response.dbVersion
+                    callback.onResponse(Unit)
+                } catch (t: Throwable) {
+                    callback.onFailure(t)
+                }
+            }
+
+            override fun onFailure(t: Throwable) {
+                callback.onFailure(t)
+            }
+
         })
     }
 

@@ -33,10 +33,15 @@ suspend fun main(args: Array<String>) {
     val fileService = FileService(serverKeyBytes, hostName, port, dbName)
     val service = HomeAccountingService(fileService, keyBytes)
 
+    val channel = Channel<Unit>()
+
+    do {
+        getDicts(service, channel)
+        channel.receive()
+    } while (!service.initialized)
+
     val dateNow = LocalDateTime.now()
     val now = dateNow.year * 10000 + dateNow.month.value * 100 + dateNow.dayOfMonth
-
-    val channel = Channel<Unit>()
 
     showFinanceRecord(service, channel, now)
     channel.receive()
@@ -91,6 +96,20 @@ fun showFinanceRecord(service: HomeAccountingService, channel: Channel<Unit>, da
                 println("$n ${op.account} amount=${op.amount} summa=${op.summa}")
                 n++
             }
+            GlobalScope.launch { channel.send(Unit) }
+        }
+
+        override fun onFailure(t: Throwable) {
+            println(t.message)
+            GlobalScope.launch { channel.send(Unit) }
+        }
+    })
+}
+
+@OptIn(DelicateCoroutinesApi::class)
+fun getDicts(service: HomeAccountingService, channel: Channel<Unit>) {
+    service.getDicts(object: NetworkService.Callback<Unit> {
+        override fun onResponse(response: Unit) {
             GlobalScope.launch { channel.send(Unit) }
         }
 

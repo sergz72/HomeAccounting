@@ -7,7 +7,24 @@ import java.nio.ByteOrder
 data class FinanceRecord(var operations: MutableList<FinanceOperation>) {
     companion object {
         fun fromBinary(data: ByteArray): FinanceRecord {
-            TODO()
+            val buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
+            var length = buffer.getShort()
+            val totals = mutableMapOf<Int, Long>()
+            while (length-- > 0) {
+               val accountId = buffer.getShort().toInt()
+               totals[accountId] = buffer.getLong()
+            }
+            length = buffer.getShort()
+            val operations = mutableListOf<FinanceOperation>()
+            while (length-- > 0) {
+                operations.add(FinanceOperation.fromBinary(buffer))
+            }
+            if (buffer.hasRemaining()) {
+                throw DBException("incorrect data")
+            }
+            val record = FinanceRecord(operations)
+            record.totals = totals
+            return record
         }
 
         fun create(): FinanceRecord {
@@ -38,7 +55,7 @@ data class FinanceRecord(var operations: MutableList<FinanceOperation>) {
         for (operation in operations) {
             operation.toBinary(buffer)
         }
-        return buffer.array().copyOfRange(0, buffer.position());
+        return buffer.array().copyOfRange(0, buffer.position())
     }
 }
 
@@ -47,8 +64,23 @@ data class FinanceOperation(
     val summa: Long,
     val subcategory: Int,
     val account: Int,
-    val properties: List<FinOpProperty>?
+    val properties: List<FinOpProperty>
 ) {
+    companion object {
+        fun fromBinary(buffer: ByteBuffer): FinanceOperation {
+            val amount = buffer.getLong()
+            val summa = buffer.getLong()
+            val subcategory = buffer.getShort().toInt()
+            val account = buffer.getShort().toInt()
+            var propertiesCount = buffer.get().toInt()
+            val properties = mutableListOf<FinOpProperty>()
+            while (propertiesCount-- > 0) {
+                properties.add(FinOpProperty.fromBinary(buffer))
+            }
+            return FinanceOperation(if (amount == 0L) { null } else { amount }, summa, subcategory, account, properties)
+        }
+    }
+
     fun updateChanges(changes: FinanceChanges, dicts: Dicts) {
         val subcategory = dicts.subcategories.getValue(subcategory)
         when (subcategory.operationCode) {
@@ -82,7 +114,7 @@ data class FinanceOperation(
 
     private fun handleTrfrWithSumma(changes: FinanceChanges, value: Long)
     {
-        if (properties == null) return
+        if (properties.isEmpty()) return
         changes.expenditure(account, value)
         val secondAccountProperty = properties.find { it.code == FinOpPropertyCode.SECA }
         if (secondAccountProperty?.numericValue != null)
@@ -114,13 +146,9 @@ data class FinanceOperation(
         buffer.putLong(summa)
         buffer.putShort(subcategory.toShort())
         buffer.putShort(account.toShort())
-        if (properties != null) {
-            buffer.put(properties.size.toByte())
-            for (property in properties) {
-                property.toBinary(buffer)
-            }
-        } else {
-            buffer.put(0)
+        buffer.put(properties.size.toByte())
+        for (property in properties) {
+            property.toBinary(buffer)
         }
     }
 }
@@ -139,6 +167,26 @@ data class FinOpProperty(
     val dateValue: Int?,
     val code: FinOpPropertyCode
 ) {
+    companion object {
+        fun fromBinary(buffer: ByteBuffer): FinOpProperty {
+            val code = FinOpPropertyCode.entries[buffer.get().toInt()]
+            var stringValue: String? = null
+            var numericValue: Long? = null
+            when (code) {
+                FinOpPropertyCode.SECA, FinOpPropertyCode.DIST, FinOpPropertyCode.PPTO, FinOpPropertyCode.AMOU -> {
+                    numericValue = buffer.getLong()
+                }
+                else -> {
+                    val length = buffer.get().toInt()
+                    val array = ByteArray(length)
+                    buffer.get(array)
+                    stringValue = String(array)
+                }
+            }
+            return FinOpProperty(numericValue, stringValue, null, code)
+        }
+    }
+
     fun toBinary(buffer: ByteBuffer) {
         buffer.put(code.ordinal.toByte())
         when (code) {

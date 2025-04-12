@@ -7,7 +7,8 @@ data class Dicts(val accounts: Map<Int, Account>,
                  val categories: Map<Int, String>,
                  val subcategories: Map<Int, Subcategory>) {
     companion object {
-        fun fromBinary(buffer: ByteBuffer): Dicts {
+        fun fromBinary(data: ByteArray): Dicts {
+            val buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
             val accountMap = Account.fromBinary(buffer)
             val categoryMap = Category.fromBinary(buffer)
             val subcategoryMap = Subcategory.fromBinary(buffer)
