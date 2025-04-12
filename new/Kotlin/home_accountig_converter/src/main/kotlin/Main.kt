@@ -1,6 +1,9 @@
 package com.sz.home_accounting.converter
 
 import com.sz.home_accounting.converter.entities.*
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
+import org.apache.commons.io.output.ByteArrayOutputStream
+import java.io.ByteArrayInputStream
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -34,7 +37,8 @@ fun main(args: Array<String>) {
     val accounts = Account.fromJson(Paths.get(sourceFolder, "accounts.json"))
     val categories = Category.fromJson(Paths.get(sourceFolder, "categories.json"))
     val subcategories = Subcategory.fromJson(Paths.get(sourceFolder, "subcategories.json"))
-    val dicts = Dicts(accounts, categories, subcategories)
+    val map = SubcategoryToPropertyCodeMap.fromJson(Paths.get(sourceFolder, "subcategory_to_property_code_map.json"))
+    val dicts = Dicts(accounts, categories, subcategories, map)
 
     when (entityName) {
         "dicts" -> convertDicts(key, dicts, destFolder)
@@ -98,13 +102,23 @@ fun decrypt(key: SecretKeySpec, data: ByteArray): ByteArray {
 fun convertDicts(key: SecretKeySpec, dicts: Dicts, destFolder: String) {
     println("Converting...")
     val data = dicts.toBinary()
+    println("Compressing...")
+    val compressed = compress(data)
     println("Writing...")
-    save(key, destFolder, 0, 0, data)
+    save(key, destFolder, 0, 0, compressed)
     println("Validating...")
     val dicts2 = Dicts.fromBinary(ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN))
     compareAccounts(dicts.accounts, dicts2.accounts)
     compareCategories(dicts.categories, dicts2.categories)
     compareSubcategories(dicts.subcategories, dicts2.subcategories)
+}
+
+fun compress(data: ByteArray): ByteArray {
+    val stream = ByteArrayOutputStream()
+    val outStream = BZip2CompressorOutputStream(stream, 9)
+    outStream.write(data)
+    outStream.close()
+    return stream.toByteArray()
 }
 
 fun compareAccounts(accounts: Map<Int, Account>, accounts2: Map<Int, Account>) {

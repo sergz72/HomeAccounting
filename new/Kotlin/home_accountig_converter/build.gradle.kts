@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    api("org.apache.commons:commons-compress:1.27.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     testImplementation(kotlin("test"))
 }
