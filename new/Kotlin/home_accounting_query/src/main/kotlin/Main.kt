@@ -1,15 +1,32 @@
 package com.sz.home_accounting.query
 
 import com.sz.file_server.lib.FileService
+import com.sz.home_accounting.query.entities.Dicts
+import com.sz.home_accounting.query.entities.FinOpProperty
+import com.sz.home_accounting.query.entities.FinanceOperation
 import com.sz.home_accounting.query.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.time.LocalDateTime
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+
+class DefaultCallback(private val channel: Channel<Unit>, private val db: DB): NetworkService.Callback<FinanceRecord> {
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun onResponse(response: FinanceRecord) {
+        println(db.date)
+        printChanges(response, db.dicts!!)
+        GlobalScope.launch { channel.send(Unit) }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun onFailure(t: Throwable) {
+        println(t.message)
+        GlobalScope.launch { channel.send(Unit) }
+    }
+}
 
 fun usage() {
     println("Usage: java -jar home_accounting_query.jar serverKeyFileName keyFileName hostName port db_name")
@@ -19,6 +36,7 @@ fun help() {
     println("Commands:\nexit\ntoday\ndate YYYYMMDD\nadd subcategory[/category] account summa")
 }
 
+@OptIn(DelicateCoroutinesApi::class)
 suspend fun main(args: Array<String>) {
     if (args.size != 5) {
         usage()
@@ -35,18 +53,12 @@ suspend fun main(args: Array<String>) {
 
     val channel = Channel<Unit>()
 
+    val db = DB(service)
+
     do {
-        getDicts(service, channel)
+        db.init(DefaultCallback(channel, db))
         channel.receive()
-    } while (service.dicts == null)
-
-    val db = DB(service.dicts!!)
-
-    val dateNow = LocalDateTime.now()
-    val now = dateNow.year * 10000 + dateNow.month.value * 100 + dateNow.dayOfMonth
-
-    showFinanceRecord(service, db, channel, now)
-    channel.receive()
+    } while (db.dicts == null)
 
     while (true) {
         print(">")
@@ -60,7 +72,7 @@ suspend fun main(args: Array<String>) {
                         if (parts.size != 1) {
                             help()
                         } else {
-                            showFinanceRecord(service, db, channel, now)
+                            showFinanceRecord(db, channel, DB.now)
                             channel.receive()
                         }
                     }
@@ -68,12 +80,18 @@ suspend fun main(args: Array<String>) {
                         if (parts.size != 2 || parts[1].length != 8) {
                             help()
                         } else {
-                            showFinanceRecord(service, db, channel, parts[1].toInt())
+                            val date = parts[1].toInt()
+                            showFinanceRecord(db, channel, date)
                             channel.receive()
                         }
                     }
                     "add" -> {
-
+                        if (parts.size != 1) {
+                            help()
+                        } else {
+                            add(db, channel)
+                            channel.receive()
+                        }
                     }
                     "exit" -> return
                     else -> help()
@@ -85,32 +103,52 @@ suspend fun main(args: Array<String>) {
     }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
-fun showFinanceRecord(service: HomeAccountingService, db: DB, channel: Channel<Unit>, date: Int) {
-    service.getFinanceRecord(date, object: NetworkService.Callback<Pair<Int, FinanceRecord>> {
-        override fun onResponse(response: Pair<Int, FinanceRecord>) {
-            db.data = sortedMapOf(response)
-            db.printChanges(0)
-            GlobalScope.launch { channel.send(Unit) }
-        }
-
-        override fun onFailure(t: Throwable) {
-            println(t.message)
-            GlobalScope.launch { channel.send(Unit) }
-        }
-    })
+fun showFinanceRecord(db: DB, channel: Channel<Unit>, date: Int) {
+    db.getFinanceRecord(date, DefaultCallback(channel, db))
 }
 
-@OptIn(DelicateCoroutinesApi::class)
-fun getDicts(service: HomeAccountingService, channel: Channel<Unit>) {
-    service.getDicts(object: NetworkService.Callback<Unit> {
-        override fun onResponse(response: Unit) {
-            GlobalScope.launch { channel.send(Unit) }
-        }
+fun add(db: DB, channel: Channel<Unit>) {
+    print("Account: ")
+    val accountId = readlnOrNull() ?: return
+    print("Subcategory: ")
+    val subcategory = readlnOrNull() ?: return
+    print("Amount: ")
+    val amount = readlnOrNull()?.toLongOrNull()
+    if (amount == null || amount < 0) {
+        println("Invalid amount")
+        return
+    }
+    print("Summa: ")
+    val summa = readlnOrNull()?.toLongOrNull()
+    if (summa == null || summa <= 0L) {
+        println("Invalid summa")
+        return
+    }
+    print("Properties: ")
+    val properties = parseProperties(readlnOrNull()) ?: return
+    TODO()
+    //val op = FinanceOperation(if (amount == 0L) {null} else {amount}, summa, subcategory, account)
+    //db.add(op, DefaultCallback(channel, db))
+}
 
-        override fun onFailure(t: Throwable) {
-            println(t.message)
-            GlobalScope.launch { channel.send(Unit) }
-        }
-    })
+fun parseProperties(value: String?): List<FinOpProperty>? {
+    return null
+}
+
+fun printChanges(data: FinanceRecord, dicts: Dicts) {
+    val changes = data.buildChanges(dicts)
+    for (change in changes.changes)
+    {
+        val accountName = dicts.accounts.getValue(change.key).name
+        println("$accountName ${change.value.summa} ${change.value.income} ${change.value.expenditure} ${change.value.getEndSumma()}")
+    }
+    println("Operations")
+    var id = 1
+    for (op in data.operations) {
+        val accountName = dicts.accounts.getValue(op.account).name
+        val subcategory = dicts.subcategories.getValue(op.subcategory)
+        val category = dicts.categories.getValue(subcategory.category)
+        println("$id $accountName $category ${subcategory.name} ${op.amount} ${op.summa}")
+        id++
+    }
 }

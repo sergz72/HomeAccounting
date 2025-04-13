@@ -57,6 +57,12 @@ data class FinanceRecord(var operations: MutableList<FinanceOperation>) {
         }
         return buffer.array().copyOfRange(0, buffer.position())
     }
+
+    fun buildNextRecord(dicts: Dicts): FinanceRecord {
+        val record = FinanceRecord(mutableListOf())
+        record.totals = buildChanges(dicts).buildTotals()
+        return record
+    }
 }
 
 data class FinanceOperation(

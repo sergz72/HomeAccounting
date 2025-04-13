@@ -16,7 +16,6 @@ import java.nio.ByteBuffer
 
 class HomeAccountingService(private val fileService: FileService, keyBytes: ByteArray) {
     private val key = SecretKeySpec(keyBytes, 0, keyBytes.size, "ChaCha20")
-    var dicts: Dicts? = null
     private var dbVersion: Int = 0
 
     fun getFinanceRecord(date: Int, callback: Callback<Pair<Int, FinanceRecord>>) {
@@ -42,7 +41,7 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
         })
     }
 
-    fun getDicts(callback: Callback<Unit>) {
+    fun getDicts(callback: Callback<Dicts>) {
         fileService.get(0, 0, object: Callback<GetResponse> {
             override fun onResponse(response: GetResponse) {
                 try {
@@ -50,9 +49,9 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
                         throw IllegalStateException("Empty response")
                     val decrypted = decrypt(response.data[0]!!.data)
                     val decompressed = decompress(decrypted)
-                    dicts = Dicts.fromBinary(decompressed)
+                    val dicts = Dicts.fromBinary(decompressed)
                     dbVersion = response.dbVersion
-                    callback.onResponse(Unit)
+                    callback.onResponse(dicts)
                 } catch (t: Throwable) {
                     callback.onFailure(t)
                 }
