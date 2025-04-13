@@ -1,8 +1,6 @@
 package com.sz.home_accounting.query
 
-import com.sz.home_accounting.query.entities.Dicts
-import com.sz.home_accounting.query.entities.FinanceOperation
-import com.sz.home_accounting.query.entities.FinanceRecord
+import com.sz.home_accounting.query.entities.*
 import com.sz.smart_home.common.NetworkService
 import java.time.LocalDateTime
 
@@ -43,10 +41,10 @@ class DB(private val service: HomeAccountingService) {
         }
         service.getFinanceRecord(date, object: NetworkService.Callback<Pair<Int, FinanceRecord>> {
             override fun onResponse(response: Pair<Int, FinanceRecord>) {
-                if (response.first == date)
-                    data = response.second
+                data = if (response.first == date)
+                    response.second
                 else
-                    data = response.second.buildNextRecord(dicts!!)
+                    response.second.buildNextRecord(dicts!!)
                 callback.onResponse(data!!)
             }
 
@@ -81,9 +79,13 @@ class DB(private val service: HomeAccountingService) {
             kv.value.updateChanges(changes, dicts!!)
             changes.cleanup(accounts.keys)
         }
+    }*/
+
+    fun buildAccounts(date: Int): Map<Int, Account> {
+        return dicts!!.accounts.filter { it.value.activeTo == null || it.value.activeTo!! > date }
     }
 
-    private fun buildAccounts(date: Int): Map<Int, Account> {
-        return dicts!!.accounts.filter { it.value.activeTo == null || it.value.activeTo!! > date }
-    }*/
+    fun buildSubcategories(): Map<String, Int> {
+        return dicts!!.subcategories.map { it.value.name + " " + dicts!!.categories[it.value.category] to it.key }.toMap()
+    }
 }

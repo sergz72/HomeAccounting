@@ -1,10 +1,7 @@
 package com.sz.home_accounting.query
 
 import com.sz.file_server.lib.FileService
-import com.sz.home_accounting.query.entities.Dicts
-import com.sz.home_accounting.query.entities.FinOpProperty
-import com.sz.home_accounting.query.entities.FinanceOperation
-import com.sz.home_accounting.query.entities.FinanceRecord
+import com.sz.home_accounting.query.entities.*
 import com.sz.smart_home.common.NetworkService
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -36,7 +33,6 @@ fun help() {
     println("Commands:\nexit\ntoday\ndate YYYYMMDD\nadd subcategory[/category] account summa")
 }
 
-@OptIn(DelicateCoroutinesApi::class)
 suspend fun main(args: Array<String>) {
     if (args.size != 5) {
         usage()
@@ -108,13 +104,13 @@ fun showFinanceRecord(db: DB, channel: Channel<Unit>, date: Int) {
 }
 
 fun add(db: DB, channel: Channel<Unit>) {
-    print("Account: ")
-    val accountId = readlnOrNull() ?: return
-    print("Subcategory: ")
-    val subcategory = readlnOrNull() ?: return
+    val accounts = db.buildAccounts(db.date).map { it.value.name to it.key }.toMap()
+    val accountId = autocomplete("Account: ", accounts) ?: return
+    val subcategoryId = autocomplete("Subcategory: ", db.buildSubcategories()) ?: return
     print("Amount: ")
-    val amount = readlnOrNull()?.toLongOrNull()
-    if (amount == null || amount < 0) {
+    val amountString = readlnOrNull() ?: return
+    val amount = if (amountString.isEmpty()) {0L} else {amountString.toLongOrNull() ?: return}
+    if (amount < 0L) {
         println("Invalid amount")
         return
     }
@@ -125,14 +121,56 @@ fun add(db: DB, channel: Channel<Unit>) {
         return
     }
     print("Properties: ")
-    val properties = parseProperties(readlnOrNull()) ?: return
-    TODO()
-    //val op = FinanceOperation(if (amount == 0L) {null} else {amount}, summa, subcategory, account)
-    //db.add(op, DefaultCallback(channel, db))
+    val properties = buildProperties(accounts) ?: return
+    val op = FinanceOperation(if (amount == 0L) {null} else {amount}, summa, subcategoryId, accountId, properties)
+    db.add(op, DefaultCallback(channel, db))
 }
 
-fun parseProperties(value: String?): List<FinOpProperty>? {
-    return null
+fun autocomplete(prompt: String, values: Map<String, Int>): Int? {
+    var variants: List<Pair<String, Int>>
+    do {
+        print(prompt)
+        val value = readlnOrNull() ?: return null
+        variants = values.filter { it.key.contains(value, true) }.toList()
+    } while (variants.isEmpty())
+    var idx = 1
+    for (variant in variants) {
+        println("$idx ${variant.first}")
+        idx++
+    }
+    val index = readlnOrNull()?.toIntOrNull() ?: return null
+    return variants[index-1].second
+}
+
+fun buildProperties(accounts: Map<String, Int>): List<FinOpProperty>? {
+    val result = mutableListOf<FinOpProperty>()
+    while (true) {
+        print("Key: ")
+        val key = readlnOrNull() ?: return null
+        if (key.isEmpty())
+            return result
+        when (key) {
+            "SECA" -> {
+                val accountId = autocomplete("Account: ", accounts) ?: return null
+                result.add(FinOpProperty(accountId.toLong(), null, null, FinOpPropertyCode.SECA))
+            }
+            "DIST" -> {
+                val dist = readlnOrNull()?.toLongOrNull() ?: return null
+                if (dist <= 0L) {return null}
+                result.add(FinOpProperty(dist, null, null, FinOpPropertyCode.DIST))
+            }
+            "NETW" -> {
+                val network = readlnOrNull() ?: return null
+                if (network.isEmpty()) {return null}
+                result.add(FinOpProperty(null, network, null, FinOpPropertyCode.NETW))
+            }
+            "TYPE" -> {
+                val type = readlnOrNull() ?: return null
+                if (type.isEmpty()) {return null}
+                result.add(FinOpProperty(null, type, null, FinOpPropertyCode.TYPE))
+            }
+        }
+    }
 }
 
 fun printChanges(data: FinanceRecord, dicts: Dicts) {

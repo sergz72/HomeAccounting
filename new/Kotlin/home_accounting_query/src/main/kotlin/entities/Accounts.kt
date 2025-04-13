@@ -15,7 +15,7 @@ data class Account(
             val result = mutableMapOf<Int, Account>()
             while (size-- > 0) {
                 val id = buffer.getShort().toInt()
-                val account = Account.create(id, buffer)
+                val account = create(id, buffer)
                 result[id] = account
             }
             return result
