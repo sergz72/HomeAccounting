@@ -3,6 +3,7 @@ package com.sz.home_accounting.query
 import com.sz.home_accounting.query.entities.*
 import com.sz.smart_home.common.NetworkService
 import java.time.LocalDateTime
+import java.util.SortedMap
 
 class DB(private val service: HomeAccountingService) {
     companion object {
@@ -60,17 +61,49 @@ class DB(private val service: HomeAccountingService) {
             return
         }
         try {
-            TODO()
-            //data.add(op)
+            data!!.add(op)
+            updateOperations(callback)
         } catch (t: Throwable) {
             callback.onFailure(t)
         }
     }
 
-    /*fun calculateTotals()
+    fun updateOperations(callback: NetworkService.Callback<FinanceRecord>) {
+        val dbVersion = service.dbVersion
+        service.getFinanceRecords(date, object: NetworkService.Callback<SortedMap<Int, FinanceRecord>> {
+            override fun onResponse(response: SortedMap<Int, FinanceRecord>) {
+                if (service.dbVersion != dbVersion) {
+                    callback.onFailure(IllegalStateException("DB version mismatch"))
+                    return
+                }
+                response[date] = data
+                calculateTotals(response)
+                save(response, callback)
+            }
+
+            override fun onFailure(t: Throwable) {
+                callback.onFailure(t)
+            }
+
+        })
+    }
+
+    fun save(records: SortedMap<Int, FinanceRecord>, callback: NetworkService.Callback<FinanceRecord>) {
+        service.set(records, object: NetworkService.Callback<Unit> {
+            override fun onResponse(response: Unit) {
+                getFinanceRecord(null, callback)
+            }
+
+            override fun onFailure(t: Throwable) {
+                callback.onFailure(t)
+            }
+        })
+    }
+
+    fun calculateTotals(valueMap: SortedMap<Int, FinanceRecord>)
     {
         var changes: FinanceChanges? = null
-        for (kv in data) {
+        for (kv in valueMap) {
             val accounts =  buildAccounts(kv.key)
             if (changes == null)
                 changes = FinanceChanges(kv.value.totals)
@@ -79,7 +112,7 @@ class DB(private val service: HomeAccountingService) {
             kv.value.updateChanges(changes, dicts!!)
             changes.cleanup(accounts.keys)
         }
-    }*/
+    }
 
     fun buildAccounts(date: Int): Map<Int, Account> {
         return dicts!!.accounts.filter { it.value.activeTo == null || it.value.activeTo!! > date }

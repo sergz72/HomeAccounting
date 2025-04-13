@@ -3,6 +3,7 @@ package com.sz.home_accounting.query
 import com.sz.file_server.lib.FileService
 import com.sz.file_server.lib.GetLastResponse
 import com.sz.file_server.lib.GetResponse
+import com.sz.file_server.lib.KeyValue
 import com.sz.home_accounting.query.entities.Dicts
 import com.sz.home_accounting.query.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService.Callback
@@ -13,18 +14,24 @@ import javax.crypto.spec.ChaCha20ParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 import java.nio.ByteBuffer
+import java.util.*
 
 class HomeAccountingService(private val fileService: FileService, keyBytes: ByteArray) {
     private val key = SecretKeySpec(keyBytes, 0, keyBytes.size, "ChaCha20")
-    private var dbVersion: Int = 0
+    var dbVersion: Int = 0
+        private set
+
+    private fun buildFinanceRecord(data: ByteArray): FinanceRecord {
+        val decrypted = decrypt(data)
+        return FinanceRecord.fromBinary(decrypted)
+    }
 
     fun getFinanceRecord(date: Int, callback: Callback<Pair<Int, FinanceRecord>>) {
         fileService.getLast(1, date, object: Callback<GetLastResponse> {
             override fun onResponse(response: GetLastResponse) {
                 try {
                     val record: FinanceRecord = if (response.data != null) {
-                        val decrypted = decrypt(response.data!!.second.data)
-                        FinanceRecord.fromBinary(decrypted)
+                        buildFinanceRecord(response.data!!.second.data)
                     } else {
                         FinanceRecord.create()
                     }
@@ -39,6 +46,30 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
                 callback.onFailure(t)
             }
         })
+    }
+
+    fun getFinanceRecords(from: Int, callback: Callback<SortedMap<Int, FinanceRecord>>) {
+        fileService.get(from, 99999999, object: Callback<GetResponse> {
+            override fun onResponse(response: GetResponse) {
+                try {
+                    callback.onResponse(
+                        response.data.map { it.key to buildFinanceRecord(it.value.data) }.toMap().toSortedMap()
+                    )
+                } catch (t: Throwable) {
+                    callback.onFailure(t)
+                }
+            }
+
+            override fun onFailure(t: Throwable) {
+                callback.onFailure(t)
+            }
+
+        })
+    }
+
+    fun set(records: SortedMap<Int, FinanceRecord>, callback: Callback<Unit>) {
+        val values = records.map { KeyValue(it.key, it.value.toBinary()) }
+        fileService.set(dbVersion, values, callback)
     }
 
     fun getDicts(callback: Callback<Dicts>) {

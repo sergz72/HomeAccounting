@@ -89,6 +89,25 @@ suspend fun main(args: Array<String>) {
                             channel.receive()
                         }
                     }
+                    "delete" -> {
+                        if (parts.size != 2) {
+                            help()
+                        } else {
+                            val id = parts[1].toInt()
+                            delete(db, channel, id)
+                            channel.receive()
+                        }
+                    }
+                    "update_summa" -> {
+                        if (parts.size != 3) {
+                            help()
+                        } else {
+                            val id = parts[1].toInt()
+                            val newSumma = parts[2].toLong()
+                            update(db, channel, id, newSumma)
+                            channel.receive()
+                        }
+                    }
                     "exit" -> return
                     else -> help()
                 }
@@ -101,6 +120,16 @@ suspend fun main(args: Array<String>) {
 
 fun showFinanceRecord(db: DB, channel: Channel<Unit>, date: Int) {
     db.getFinanceRecord(date, DefaultCallback(channel, db))
+}
+
+fun update(db: DB, channel: Channel<Unit>, id: Int, newSumma: Long) {
+    db.data!!.operations[id].summa = newSumma
+    db.updateOperations(DefaultCallback(channel, db))
+}
+
+fun delete(db: DB, channel: Channel<Unit>, id: Int) {
+    db.data!!.operations.removeAt(id)
+    db.updateOperations(DefaultCallback(channel, db))
 }
 
 fun add(db: DB, channel: Channel<Unit>) {

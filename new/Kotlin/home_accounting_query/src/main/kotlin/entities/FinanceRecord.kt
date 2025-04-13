@@ -63,14 +63,21 @@ data class FinanceRecord(var operations: MutableList<FinanceOperation>) {
         record.totals = buildChanges(dicts).buildTotals()
         return record
     }
+
+    fun add(op: FinanceOperation) {
+        if (operations.any { it.subcategory == op.subcategory && it.account == op.account }) {
+            throw IllegalArgumentException("Duplicate operation")
+        }
+        operations.add(op)
+    }
 }
 
 data class FinanceOperation(
-    val amount: Long?,
-    val summa: Long,
-    val subcategory: Int,
-    val account: Int,
-    val properties: List<FinOpProperty>
+    var amount: Long?,
+    var summa: Long,
+    var subcategory: Int,
+    var account: Int,
+    var properties: List<FinOpProperty>
 ) {
     companion object {
         fun fromBinary(buffer: ByteBuffer): FinanceOperation {
@@ -114,7 +121,7 @@ data class FinanceOperation(
 
     private fun handleExch(changes: FinanceChanges) {
         if (amount != null) {
-            handleTrfrWithSumma(changes, amount / 10)
+            handleTrfrWithSumma(changes, amount!! / 10)
         }
     }
 
