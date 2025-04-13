@@ -255,6 +255,13 @@ class FinanceChanges(totals: Map<Int, Long>) {
     fun expenditure(account: Int, value: Long) {
         changes.getOrPut(account) { FinanceChange(0, 0, 0) }.expenditure += value
     }
+
+    fun cleanup(accounts: Set<Int>) {
+        val keysToDelete = changes.keys.filter { it !in accounts }
+        for (key in keysToDelete) {
+            changes.remove(key)
+        }
+    }
 }
 
 data class FinanceChange(val summa: Long, var income: Long, var expenditure: Long) {

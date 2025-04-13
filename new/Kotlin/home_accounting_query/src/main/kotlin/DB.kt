@@ -1,5 +1,6 @@
 package com.sz.home_accounting.query
 
+import com.sz.home_accounting.query.entities.Account
 import com.sz.home_accounting.query.entities.Dicts
 import com.sz.home_accounting.query.entities.FinanceChanges
 import com.sz.home_accounting.query.entities.FinanceRecord
@@ -12,12 +13,18 @@ class DB(private val dicts: Dicts) {
     {
         var changes: FinanceChanges? = null
         for (kv in data) {
+            val accounts =  buildAccounts(kv.key)
             if (changes == null)
                 changes = FinanceChanges(kv.value.totals)
             else
                 kv.value.totals = changes.buildTotals()
             kv.value.updateChanges(changes, dicts)
+            changes.cleanup(accounts.keys)
         }
+    }
+
+    private fun buildAccounts(date: Int): Map<Int, Account> {
+        return dicts.accounts.filter { it.value.activeTo == null || it.value.activeTo!! > date }
     }
 
     fun printChanges(date: Int) {

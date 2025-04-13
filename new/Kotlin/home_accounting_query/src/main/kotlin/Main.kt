@@ -1,7 +1,6 @@
 package com.sz.home_accounting.query
 
 import com.sz.file_server.lib.FileService
-import com.sz.home_accounting.query.entities.Dicts
 import com.sz.home_accounting.query.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -60,15 +59,17 @@ suspend fun main(args: Array<String>) {
                     "today" -> {
                         if (parts.size != 1) {
                             help()
-                        } else
+                        } else {
                             showFinanceRecord(service, db, channel, now)
+                            channel.receive()
+                        }
                     }
-
                     "date" -> {
                         if (parts.size != 2 || parts[1].length != 8) {
                             help()
                         } else {
                             showFinanceRecord(service, db, channel, parts[1].toInt())
+                            channel.receive()
                         }
                     }
                     "add" -> {
@@ -77,7 +78,6 @@ suspend fun main(args: Array<String>) {
                     "exit" -> return
                     else -> help()
                 }
-                channel.receive()
             } catch (e: Exception) {
                 println(e.message)
             }
