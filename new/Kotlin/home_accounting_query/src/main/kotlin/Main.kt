@@ -30,7 +30,7 @@ fun usage() {
 }
 
 fun help() {
-    println("Commands:\nexit\ntoday\ndate YYYYMMDD\nadd subcategory[/category] account summa")
+    println("Commands:\nexit\ntoday\ndate YYYYMMDD\nadd\ndelete id\nupdate_summa id new_summa")
 }
 
 suspend fun main(args: Array<String>) {

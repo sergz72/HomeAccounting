@@ -68,8 +68,12 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
     }
 
     fun set(records: SortedMap<Int, FinanceRecord>, callback: Callback<Unit>) {
-        val values = records.map { KeyValue(it.key, it.value.toBinary()) }
+        val values = records.map { KeyValue(it.key, buildEncryptedRecord(it.value)) }
         fileService.set(dbVersion, values, callback)
+    }
+
+    private fun buildEncryptedRecord(value: FinanceRecord): ByteArray {
+        return if (value.operations.isEmpty()) {ByteArray(0)} else {encrypt(value.toBinary())}
     }
 
     fun getDicts(callback: Callback<Dicts>) {
