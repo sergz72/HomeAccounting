@@ -1,7 +1,9 @@
 package com.sz.home_accounting.query
 
 import com.sz.file_server.lib.FileService
-import com.sz.home_accounting.query.entities.*
+import com.sz.home_accounting.core.DB
+import com.sz.home_accounting.core.HomeAccountingService
+import com.sz.home_accounting.core.entities.*
 import com.sz.smart_home.common.NetworkService
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -123,7 +125,8 @@ fun showFinanceRecord(db: DB, channel: Channel<Unit>, date: Int) {
 }
 
 fun update(db: DB, channel: Channel<Unit>, id: Int, newSumma: Long) {
-    db.data!!.operations[id].summa = newSumma
+    val op = db.data!!.operations[id]
+    db.data!!.operations[id] = FinanceOperation(op.amount, newSumma, op.subcategory, op.account, op.properties)
     db.updateOperations(DefaultCallback(channel, db))
 }
 

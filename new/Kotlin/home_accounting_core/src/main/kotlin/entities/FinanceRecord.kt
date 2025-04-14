@@ -1,6 +1,6 @@
-package com.sz.home_accounting.query.entities
+package com.sz.home_accounting.core.entities
 
-import com.sz.home_accounting.query.DBException
+import com.sz.home_accounting.core.DBException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -73,11 +73,11 @@ data class FinanceRecord(var operations: MutableList<FinanceOperation>) {
 }
 
 data class FinanceOperation(
-    var amount: Long?,
-    var summa: Long,
-    var subcategory: Int,
-    var account: Int,
-    var properties: List<FinOpProperty>
+    val amount: Long?,
+    val summa: Long,
+    val subcategory: Int,
+    val account: Int,
+    val properties: List<FinOpProperty>
 ) {
     companion object {
         fun fromBinary(buffer: ByteBuffer): FinanceOperation {
@@ -121,7 +121,7 @@ data class FinanceOperation(
 
     private fun handleExch(changes: FinanceChanges) {
         if (amount != null) {
-            handleTrfrWithSumma(changes, amount!! / 10)
+            handleTrfrWithSumma(changes, amount / 10)
         }
     }
 

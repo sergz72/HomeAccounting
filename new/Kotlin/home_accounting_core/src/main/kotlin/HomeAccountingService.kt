@@ -1,11 +1,11 @@
-package com.sz.home_accounting.query
+package com.sz.home_accounting.core
 
 import com.sz.file_server.lib.FileService
 import com.sz.file_server.lib.GetLastResponse
 import com.sz.file_server.lib.GetResponse
 import com.sz.file_server.lib.KeyValue
-import com.sz.home_accounting.query.entities.Dicts
-import com.sz.home_accounting.query.entities.FinanceRecord
+import com.sz.home_accounting.core.entities.Dicts
+import com.sz.home_accounting.core.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService.Callback
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 import java.io.ByteArrayInputStream

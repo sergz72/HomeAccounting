@@ -1,3 +1,3 @@
-package com.sz.home_accounting.query
+package com.sz.home_accounting.core
 
 class DBException(message: String?) : Exception(message)

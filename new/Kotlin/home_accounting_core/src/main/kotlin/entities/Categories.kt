@@ -1,4 +1,4 @@
-package com.sz.home_accounting.query.entities
+package com.sz.home_accounting.core.entities
 
 import java.nio.ByteBuffer
 
