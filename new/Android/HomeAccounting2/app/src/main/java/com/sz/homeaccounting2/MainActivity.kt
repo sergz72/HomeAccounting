@@ -1,8 +1,13 @@
 package com.sz.homeaccounting2
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
@@ -43,6 +48,20 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
             val dialog = builder.create()
             dialog.show()
         }
+
+        private fun isWifiConnected(context: Activity): Boolean {
+            try {
+                val cm = context.getSystemService(CONNECTIVITY_SERVICE)
+                if (cm is ConnectivityManager) {
+                    val n = cm.activeNetwork ?: return false
+                    val cp = cm.getNetworkCapabilities(n)
+                    return cp != null && cp.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                }
+            } catch (e: Exception) {
+            }
+
+            return true
+        }
     }
 
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -56,8 +75,20 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
     val operationsViewModel: OperationsViewModel
         get() = _operationsViewModel
 
+    private val mHandler = Handler(Looper.getMainLooper())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val timeout = if (isWifiConnected(this)) {2000} else {7000}
+
+        fileService = FileService(resources.openRawResource(R.raw.serverkey).readBytes(),
+            "127.0.0.1", 12345, timeout, "home_accounting")
+        val service = HomeAccountingService(fileService, resources.openRawResource(R.raw.key).readBytes())
+        db = DB(service)
+
+        val operationsViewModelFactory = OperationsViewModelFactory(db)
+        _operationsViewModel = ViewModelProvider(this, operationsViewModelFactory)[OperationsViewModel::class.java]
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -78,14 +109,6 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         navView.setupWithNavController(navController)
 
         mActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), this)
-
-        fileService = FileService(resources.openRawResource(R.raw.serverkey).readBytes(),
-                                    "localhost", 12345, "home_accounting")
-        val service = HomeAccountingService(fileService, resources.openRawResource(R.raw.key).readBytes())
-        db = DB(service)
-
-        val operationsViewModelFactory = OperationsViewModelFactory(db)
-        _operationsViewModel = ViewModelProvider(this)[OperationsViewModel::class.java]
 
         showPinActivity()
     }
@@ -109,7 +132,7 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
 
     private fun updateServer() {
         val settings = getSharedPreferences(PREFS_NAME, 0)
-        var serverAddress = settings.getString("server_name", "localhost")!!
+        var serverAddress = settings.getString("server_name", "127.0.0.1")!!
 
         var port = 59998
         val serverAddressParts = serverAddress.split(':')
@@ -131,7 +154,7 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
             }
 
             override fun onFailure(t: Throwable) {
-                alert(this@MainActivity, t.message)
+                mHandler.post { alert(this@MainActivity, t.message) }
             }
         })
     }
