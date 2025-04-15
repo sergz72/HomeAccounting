@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/subcategory"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_column="0"
+        android:layout_row="0"
+        android:maxLines="1"
+        android:layout_marginStart="10dp"
+        android:ellipsize="end"
+        android:layout_gravity="fill"
+        />
+
+    <TextView
+        android:id="@+id/summa"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:layout_column="1"
+        android:layout_row="0"
+        android:maxLines="1"
+        android:ellipsize="end"
+        />
+
+    <TextView
+        android:id="@+id/category"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_column="0"
+        android:layout_row="1"
+        android:maxLines="1"
+        android:layout_marginStart="10dp"
+        android:ellipsize="end"
+        android:layout_gravity="fill"
+        />
+
+    <TextView
+        android:id="@+id/amount"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:layout_column="1"
+        android:layout_row="1"
+        android:maxLines="1"
+        android:ellipsize="end"
+        />
+
+    <ImageButton
+        android:id="@+id/bnModify"
+        android:layout_width="50dp"
+        android:layout_height="0dp"
+        android:layout_column="2"
+        android:layout_row="0"
+        android:layout_rowSpan="2"
+        android:src="@android:drawable/ic_menu_edit"
+        android:contentDescription="@string/action_modify"
+        android:layout_gravity="fill_vertical"
+        android:background="@color/colorYellow"
+        />
+
+    <ImageButton
+        android:id="@+id/bnDelete"
+        android:layout_width="50dp"
+        android:layout_height="0dp"
+        android:layout_column="3"
+        android:layout_row="0"
+        android:layout_rowSpan="2"
+        android:src="@android:drawable/ic_menu_delete"
+        android:contentDescription="@string/action_delete"
+        android:layout_gravity="fill_vertical"
+        android:background="@color/colorRed"
+        />
+</GridLayout>
