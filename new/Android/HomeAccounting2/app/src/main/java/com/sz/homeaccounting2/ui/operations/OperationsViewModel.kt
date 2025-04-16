@@ -1,12 +1,16 @@
 package com.sz.homeaccounting2.ui.operations
 
+import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.sz.home_accounting.core.DB
 import com.sz.home_accounting.core.entities.FinanceRecord
+import com.sz.homeaccounting2.MainActivity.Companion.getIntDate
 import com.sz.homeaccounting2.ui.operations.entities.FinanceTotalAndOperations
+import com.sz.smart_home.common.NetworkService
 import java.time.LocalDate
 
 class OperationsViewModelFactory(private val db: DB) : ViewModelProvider.Factory {
@@ -30,27 +34,77 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
     private val _uiState = MutableLiveData<UiState>(UiState.Loading)
     val uiState: LiveData<UiState> = _uiState
 
-    var operations: List<FinanceTotalAndOperations> = listOf()
+    private val mHandler = Handler(Looper.getMainLooper())
+
+    private var record: FinanceRecord? = null
+
+    private val _operations = MutableLiveData<List<FinanceTotalAndOperations>>().apply {
+        value = listOf()
+    }
+    val operations: LiveData<List<FinanceTotalAndOperations>> = _operations
 
     private val _date = MutableLiveData<LocalDate>().apply {
         value = LocalDate.now()
     }
-
     val date: LiveData<LocalDate> = _date
 
     fun setDate(value: LocalDate) {
         _date.value = value
+        refresh()
     }
 
     fun nextDate() {
-        _date.value = _date.value!!.plusDays(1)
+        setDate(date.value!!.plusDays(1))
     }
 
     fun prevDate() {
-        _date.value = _date.value!!.minusDays(1)
+        setDate(_date.value!!.minusDays(1))
     }
 
-    fun setFinanceRecord(record: FinanceRecord) {
+    private fun setFinanceRecord(record: FinanceRecord) {
+        this.record = record
+        _operations.value = FinanceTotalAndOperations.fromFinanceRecord(record, db.dicts!!)
+    }
 
+    fun refresh() {
+        _uiState.value = UiState.Loading
+        if (db.dicts == null) {
+            db.init(object : NetworkService.Callback<FinanceRecord> {
+                override fun onResponse(response: FinanceRecord) {
+                    setFinanceRecord(response)
+                    mHandler.post { _uiState.value = UiState.Success }
+                }
+
+                override fun onFailure(t: Throwable) {
+                    mHandler.post { _uiState.value = UiState.Error(t.message ?: "Unknown error") }
+                }
+            })
+        } else {
+            db.getFinanceRecord(getIntDate(date.value!!),
+                object : NetworkService.Callback<FinanceRecord> {
+                    override fun onResponse(response: FinanceRecord) {
+                        mHandler.post {
+                            setFinanceRecord(response)
+                            _uiState.value = UiState.Success
+                        }
+                    }
+
+                    override fun onFailure(t: Throwable) {
+                        mHandler.post { _uiState.value = UiState.Error(t.message ?: "Unknown error") }
+                    }
+                })
+        }
+    }
+
+    fun getAccountName(accountId: Int): String {
+        return db.dicts!!.accounts[accountId]!!.name
+    }
+
+    fun getSubcategoryName(subcategoryId: Int): String {
+        return db.dicts!!.subcategories[subcategoryId]!!.name
+    }
+
+    fun getCategoryNameBySubcategoryId(subcategoryId: Int): String {
+        return db.dicts!!.categories[db.dicts!!.subcategories[subcategoryId]!!.category]!!
     }
 }

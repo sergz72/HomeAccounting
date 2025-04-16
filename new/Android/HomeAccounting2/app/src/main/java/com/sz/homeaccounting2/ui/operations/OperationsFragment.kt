@@ -10,13 +10,12 @@ import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import com.sz.homeaccounting2.IData
 import com.sz.homeaccounting2.MainActivity
 import com.sz.homeaccounting2.databinding.FragmentOperationsBinding
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class OperationsFragment : Fragment(), IData, View.OnClickListener, OperationsViewAdapter.OpExecutor {
+class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapter.OpExecutor {
     companion object {
         val UI_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
     }
@@ -43,8 +42,6 @@ class OperationsFragment : Fragment(), IData, View.OnClickListener, OperationsVi
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        //viewModel = ViewModelProvider(this)[OperationsViewModel::class.java]
-
         _binding = FragmentOperationsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
@@ -80,16 +77,16 @@ class OperationsFragment : Fragment(), IData, View.OnClickListener, OperationsVi
         _binding = null
     }
 
-    override fun refresh() {
+    fun refresh() {
     }
 
-    override fun add() {
+    fun add() {
     }
 
-    override fun modify(operationId: Int) {
+    override fun modify(operationId: Long) {
     }
 
-    override fun delete(operationId: Int) {
+    override fun delete(operationId: Long) {
     }
 
     override fun onClick(v: View?) {

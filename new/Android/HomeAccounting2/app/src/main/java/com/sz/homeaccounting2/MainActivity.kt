@@ -1,14 +1,15 @@
 package com.sz.homeaccounting2
 
+import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.Menu
+import android.view.View.GONE
+import android.view.View.VISIBLE
+import android.widget.TextView
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -26,12 +27,12 @@ import androidx.lifecycle.ViewModelProvider
 import com.sz.file_server.lib.FileService
 import com.sz.home_accounting.core.DB
 import com.sz.home_accounting.core.HomeAccountingService
-import com.sz.home_accounting.core.entities.FinanceRecord
 import com.sz.homeaccounting2.databinding.ActivityMainBinding
 import com.sz.homeaccounting2.ui.operations.OperationsViewModel
 import com.sz.homeaccounting2.ui.operations.OperationsViewModelFactory
 import com.sz.homeaccounting2.ui.pin.PinActivity
-import com.sz.smart_home.common.NetworkService
+import java.time.LocalDate
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult> {
     companion object {
@@ -41,12 +42,11 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         internal const val MODIFYOPERATION = 3
         internal const val PINCHECK = 4
 
-        fun alert(activity: Activity, message: String?) {
+        fun alert(activity: Activity, message: String?): AlertDialog {
             val builder = AlertDialog.Builder(activity)
             builder.setMessage(message)
-                .setTitle("Error")
-            val dialog = builder.create()
-            dialog.show()
+                .setTitle("Status")
+            return builder.create()
         }
 
         private fun isWifiConnected(context: Activity): Boolean {
@@ -57,10 +57,26 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
                     val cp = cm.getNetworkCapabilities(n)
                     return cp != null && cp.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
             }
 
             return true
+        }
+
+        fun getIntDate(date: LocalDate): Int {
+            return date.year * 10000 + date.monthValue * 100 + date.dayOfMonth
+        }
+
+        @SuppressLint("DefaultLocale")
+        fun formatMoney(value: Long): String {
+            return String.format("%d.%02d", value / 100, abs(value % 100))
+        }
+
+        @SuppressLint("DefaultLocale")
+        fun formatMoney3(value: Long?): String {
+            return if (value == null) {
+                ""
+            } else String.format("%d.%03d", value / 1000, abs(value % 1000))
         }
     }
 
@@ -75,10 +91,12 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
     val operationsViewModel: OperationsViewModel
         get() = _operationsViewModel
 
-    private val mHandler = Handler(Looper.getMainLooper())
+    private lateinit var mAlert: AlertDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        mAlert = alert(this, "Loading...")
 
         val timeout = if (isWifiConnected(this)) {2000} else {7000}
 
@@ -110,7 +128,29 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
 
         mActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), this)
 
+        _operationsViewModel.uiState.observe(this) { state ->
+            when (state) {
+                is OperationsViewModel.UiState.Loading -> showLoading()
+                is OperationsViewModel.UiState.Success -> hideLoading()
+                is OperationsViewModel.UiState.Error -> showError(state.message)
+            }
+        }
+
         showPinActivity()
+    }
+
+    private fun showLoading() {
+        mAlert.setMessage(getString(R.string.loading))
+        mAlert.show()
+    }
+
+    private fun hideLoading() {
+        mAlert.hide()
+    }
+
+    private fun showError(message: String) {
+        mAlert.setMessage(message)
+        mAlert.show()
     }
 
     private fun showPinActivity() {
@@ -148,19 +188,12 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         }
 
         fileService.updateServer(serverAddress, port)
-        db.init(object: NetworkService.Callback<FinanceRecord> {
-            override fun onResponse(response: FinanceRecord) {
-                _operationsViewModel.setFinanceRecord(response)
-            }
-
-            override fun onFailure(t: Throwable) {
-                mHandler.post { alert(this@MainActivity, t.message) }
-            }
-        })
+        db.dicts = null
+        refresh()
     }
 
     private fun refresh() {
-        //todo
+        operationsViewModel.refresh()
     }
 
     override fun onActivityResult(result: ActivityResult) {

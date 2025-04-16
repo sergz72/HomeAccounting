@@ -9,6 +9,7 @@ import android.widget.BaseExpandableListAdapter
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import com.sz.homeaccounting2.MainActivity
 import com.sz.homeaccounting2.R
 
 class OperationsViewAdapter(private val context: Context, private val model: OperationsViewModel,
@@ -16,37 +17,36 @@ class OperationsViewAdapter(private val context: Context, private val model: Ope
     View.OnClickListener, SwipeDetector.OnSwipeListener {
 
     interface OpExecutor {
-        fun modify(operationId: Int)
-        fun delete(operationId: Int)
+        fun modify(operationId: Long)
+        fun delete(operationId: Long)
     }
 
-    private data class Op(val isDelete: Boolean, val operationId: Int, val otherButton: ImageButton)
+    private data class Op(val isDelete: Boolean, val operationId: Long, val otherButton: ImageButton)
 
     private var mSwipeDetector: SwipeDetector = SwipeDetector(100, this)
 
     override fun getGroupCount(): Int {
-        return model.operations.size
+        return model.operations.value!!.size
     }
 
     override fun getChildrenCount(groupPosition: Int): Int {
-        return model.operations[groupPosition].operations?.size ?: 0
+        return model.operations.value!![groupPosition].operations?.size ?: 0
     }
 
     override fun getGroup(groupPosition: Int): Any {
-        return model.operations[groupPosition]
+        return model.operations.value!![groupPosition]
     }
 
     override fun getChild(groupPosition: Int, childPosition: Int): Any {
-        return model.operations[groupPosition].operations!![childPosition]
+        return model.operations.value!![groupPosition].operations!![childPosition]
     }
 
     override fun getGroupId(groupPosition: Int): Long {
-        return model.operations[groupPosition].accountId.toLong()
+        return model.operations.value!![groupPosition].accountId.toLong()
     }
 
     override fun getChildId(groupPosition: Int, childPosition: Int): Long {
-        //todo
-        return 0//model.operations[groupPosition].operations!![childPosition].id.toLong()
+        return (groupPosition * 1000 + childPosition).toLong()
     }
 
     override fun hasStableIds(): Boolean {
@@ -70,12 +70,12 @@ class OperationsViewAdapter(private val context: Context, private val model: Ope
         val balanceView = v.findViewById<TextView>(R.id.balance)
         val indicatorView = v.findViewById<ExpandIndicator>(R.id.indicator)
 
-        val ft = model.operations[groupPosition]
+        val ft = model.operations.value!![groupPosition]
 
-        //accountView.text = SharedResources.db!!.getAccount(ft.accountId)!!.name
-        //incomeView.text = SharedResources.db!!.formatMoney(ft.summaIncome)
-        //expenditureView.text = SharedResources.db!!.formatMoney(ft.summaExpenditure)
-        //balanceView.text = SharedResources.db!!.formatMoney(ft.balance)
+        accountView.text = model.getAccountName(ft.accountId)
+        incomeView.text = MainActivity.formatMoney(ft.summaIncome)
+        expenditureView.text = MainActivity.formatMoney(ft.summaExpenditure)
+        balanceView.text = MainActivity.formatMoney(ft.balance)
         if (!ft.operations.isNullOrEmpty()) {
             indicatorView.setExpanded(isExpanded)
         } else {
@@ -107,17 +107,17 @@ class OperationsViewAdapter(private val context: Context, private val model: Ope
         val bnModifyView = v.findViewById<ImageButton>(R.id.bnModify)
         val bnDeleteView = v.findViewById<ImageButton>(R.id.bnDelete)
 
-        val op = model.operations[groupPosition].operations!![childPosition]
+        val op = model.operations.value!![groupPosition].operations!![childPosition]
 
-        //categoryView.text = SharedResources.db!!.getCategoryNameBySubcategoryId(op.subcategoryId)
-        //subcategoryView.text = SharedResources.db!!.getSubcategoryName(op.subcategoryId)
-        //amountView.text = SharedResources.db!!.formatMoney3(op.amount)
-        //summaView.text = SharedResources.db!!.formatMoney(op.summa)
+        categoryView.text = model.getCategoryNameBySubcategoryId(op.subcategory)
+        subcategoryView.text = model.getSubcategoryName(op.subcategory)
+        amountView.text = MainActivity.formatMoney3(op.amount)
+        summaView.text = MainActivity.formatMoney(op.summa)
 
         bnModifyView.visibility = View.GONE
-        //bnModifyView.tag = Op(false, op.id, bnDeleteView)
+        bnModifyView.tag = Op(false, getChildId(groupPosition, childPosition), bnDeleteView)
         bnDeleteView.visibility = View.GONE
-        //bnDeleteView.tag = Op(true, op.id, bnModifyView)
+        bnDeleteView.tag = Op(true, getChildId(groupPosition, childPosition), bnModifyView)
 
         return v
     }
