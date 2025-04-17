@@ -11,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.sz.homeaccounting2.MainActivity
 import com.sz.homeaccounting2.R
+import com.sz.homeaccounting2.ui.operations.entities.FinanceTotalAndOperations
 
 class OperationsViewAdapter(private val context: Context, private val model: OperationsViewModel,
                             private val executor: OpExecutor) : BaseExpandableListAdapter(),
@@ -25,24 +26,31 @@ class OperationsViewAdapter(private val context: Context, private val model: Ope
 
     private var mSwipeDetector: SwipeDetector = SwipeDetector(100, this)
 
+    private var mOperations: List<FinanceTotalAndOperations> = listOf()
+
+    fun setOperations(operations: List<FinanceTotalAndOperations>) {
+        mOperations = operations
+        notifyDataSetChanged()
+    }
+
     override fun getGroupCount(): Int {
-        return model.operations.value!!.size
+        return mOperations.size
     }
 
     override fun getChildrenCount(groupPosition: Int): Int {
-        return model.operations.value!![groupPosition].operations?.size ?: 0
+        return mOperations[groupPosition].operations?.size ?: 0
     }
 
     override fun getGroup(groupPosition: Int): Any {
-        return model.operations.value!![groupPosition]
+        return mOperations[groupPosition]
     }
 
     override fun getChild(groupPosition: Int, childPosition: Int): Any {
-        return model.operations.value!![groupPosition].operations!![childPosition]
+        return mOperations[groupPosition].operations!![childPosition]
     }
 
     override fun getGroupId(groupPosition: Int): Long {
-        return model.operations.value!![groupPosition].accountId.toLong()
+        return mOperations[groupPosition].accountId.toLong()
     }
 
     override fun getChildId(groupPosition: Int, childPosition: Int): Long {
@@ -70,7 +78,7 @@ class OperationsViewAdapter(private val context: Context, private val model: Ope
         val balanceView = v.findViewById<TextView>(R.id.balance)
         val indicatorView = v.findViewById<ExpandIndicator>(R.id.indicator)
 
-        val ft = model.operations.value!![groupPosition]
+        val ft = mOperations[groupPosition]
 
         accountView.text = model.getAccountName(ft.accountId)
         incomeView.text = MainActivity.formatMoney(ft.summaIncome)
@@ -107,7 +115,7 @@ class OperationsViewAdapter(private val context: Context, private val model: Ope
         val bnModifyView = v.findViewById<ImageButton>(R.id.bnModify)
         val bnDeleteView = v.findViewById<ImageButton>(R.id.bnDelete)
 
-        val op = model.operations.value!![groupPosition].operations!![childPosition]
+        val op = mOperations[groupPosition].operations!![childPosition]
 
         categoryView.text = model.getCategoryNameBySubcategoryId(op.subcategory)
         subcategoryView.text = model.getSubcategoryName(op.subcategory)

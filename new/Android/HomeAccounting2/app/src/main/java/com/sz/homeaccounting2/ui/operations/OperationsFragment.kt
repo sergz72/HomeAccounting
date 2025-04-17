@@ -16,6 +16,7 @@ import com.sz.homeaccounting2.databinding.FragmentOperationsBinding
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import android.content.DialogInterface
+import androidx.appcompat.app.AppCompatActivity
 
 class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapter.OpExecutor {
     companion object {
@@ -30,7 +31,6 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
 
     private lateinit var mActivityResultLauncher: ActivityResultLauncher<Intent>
 
-    private lateinit var mOperationsViewAdapter: OperationsViewAdapter
     private lateinit var viewModel: OperationsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,10 +66,14 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
             viewModel.nextDate()
         }
 
-        mOperationsViewAdapter = OperationsViewAdapter(this.requireContext(), viewModel, this)
-        binding.operationsView.setAdapter(mOperationsViewAdapter)
+        val operationsViewAdapter = OperationsViewAdapter(this.requireContext(), viewModel, this)
+        binding.operationsView.setAdapter(operationsViewAdapter)
 
-        refresh()
+        viewModel.operations.observe(context as AppCompatActivity) { ops ->
+            operationsViewAdapter.setOperations(ops)
+        }
+
+
 
         return root
     }

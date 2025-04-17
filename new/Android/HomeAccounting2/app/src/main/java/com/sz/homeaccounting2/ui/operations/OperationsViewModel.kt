@@ -14,6 +14,10 @@ import com.sz.home_accounting.core.entities.Subcategory
 import com.sz.homeaccounting2.MainActivity.Companion.getIntDate
 import com.sz.homeaccounting2.ui.operations.entities.FinanceTotalAndOperations
 import com.sz.smart_home.common.NetworkService
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class OperationsViewModelFactory(private val db: DB) : ViewModelProvider.Factory {
@@ -69,13 +73,16 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
         _operations.value = FinanceTotalAndOperations.fromFinanceRecord(record, db.dicts!!)
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     fun refresh() {
         _uiState.value = UiState.Loading
         if (db.dicts == null) {
             db.init(object : NetworkService.Callback<FinanceRecord> {
                 override fun onResponse(response: FinanceRecord) {
-                    setFinanceRecord(response)
-                    mHandler.post { _uiState.value = UiState.Success }
+                    mHandler.post {
+                        setFinanceRecord(response)
+                        _uiState.value = UiState.Success
+                    }
                 }
 
                 override fun onFailure(t: Throwable) {
