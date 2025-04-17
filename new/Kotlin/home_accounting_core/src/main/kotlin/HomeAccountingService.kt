@@ -9,15 +9,12 @@ import com.sz.home_accounting.core.entities.FinanceRecord
 import com.sz.smart_home.common.NetworkService.Callback
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 import java.io.ByteArrayInputStream
-import javax.crypto.Cipher
-import javax.crypto.spec.ChaCha20ParameterSpec
-import javax.crypto.spec.SecretKeySpec
+import java.io.IOException
 import kotlin.random.Random
 import java.nio.ByteBuffer
 import java.util.*
 
-class HomeAccountingService(private val fileService: FileService, keyBytes: ByteArray) {
-    private val key = SecretKeySpec(keyBytes, 0, keyBytes.size, "ChaCha20")
+class HomeAccountingService(private val fileService: FileService, private val key: ByteArray) {
     var dbVersion: Int = 0
         private set
 
@@ -100,11 +97,9 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
     }
 
     fun encrypt(data: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance("ChaCha20")
         val iv = Random.nextBytes(12)
-        val param = ChaCha20ParameterSpec(iv, 0)
-        cipher.init(Cipher.ENCRYPT_MODE, key, param)
-        val encrypted = cipher.doFinal(data)
+        val cipher = ChaCha20(key, iv, 0u)
+        val encrypted = cipher.encrypt(data)
         val buffer = ByteBuffer.allocate(encrypted.size + iv.size)
         buffer.put(iv)
         buffer.put(encrypted)
@@ -112,11 +107,12 @@ class HomeAccountingService(private val fileService: FileService, keyBytes: Byte
     }
 
     private fun decrypt(data: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance("ChaCha20")
-        val iv = data.copyOfRange(0, 12)
-        val param = ChaCha20ParameterSpec(iv, 0)
-        cipher.init(Cipher.DECRYPT_MODE, key, param)
-        return cipher.doFinal(data.copyOfRange(12, data.size))
+        if (data.size < 13) {
+            throw IOException("Invalid response")
+        }
+        val iv = data.sliceArray(0..12)
+        val cipher = ChaCha20(key, iv, 0u)
+        return cipher.encrypt(data.sliceArray(12..<data.size))
     }
 
     private fun decompress(decrypted: ByteArray): ByteArray {
