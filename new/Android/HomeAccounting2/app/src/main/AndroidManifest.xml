@@ -25,6 +25,13 @@
         <activity
             android:name=".ui.pin.PinActivity"
             android:label="@string/title_activity_pin" />
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings" />
+        <activity
+            android:name=".ui.operations.NewOperationActivity"
+            android:label="@string/title_activity_editoperation"
+            />
     </application>
 
 </manifest>

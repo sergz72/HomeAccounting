@@ -11,9 +11,11 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.sz.homeaccounting2.MainActivity
+import com.sz.homeaccounting2.R
 import com.sz.homeaccounting2.databinding.FragmentOperationsBinding
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import android.content.DialogInterface
 
 class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapter.OpExecutor {
     companion object {
@@ -84,9 +86,19 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
     }
 
     override fun modify(operationId: Long) {
+        val intent = Intent(activity, NewOperationActivity::class.java)
+        intent.putExtra("operationId", operationId)
+        intent.putExtra("code", MainActivity.MODIFYOPERATION)
+        mActivityResultLauncher.launch(intent)
     }
 
     override fun delete(operationId: Long) {
+        MainActivity.confirm(requireActivity(), R.string.operation_delete_confirmation, realDelete(operationId))
+    }
+
+    private fun realDelete(operationId: Long): DialogInterface.OnClickListener {
+        return DialogInterface.OnClickListener { _, _ ->
+        }
     }
 
     override fun onClick(v: View?) {

@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.preference.ktx)
     implementation(libs.kotlinx.coroutines.core)
     implementation(files("../../../IdeaProjects/smart_home/smart_home_common/build/libs/smart_home_common-0.1.jar"))
     implementation(files("../../../IdeaProjects/file_server/file_server_lib/build/libs/file_server_lib-0.1.jar"))

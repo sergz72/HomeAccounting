@@ -7,7 +7,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.sz.home_accounting.core.DB
+import com.sz.home_accounting.core.entities.Account
+import com.sz.home_accounting.core.entities.FinanceOperation
 import com.sz.home_accounting.core.entities.FinanceRecord
+import com.sz.home_accounting.core.entities.Subcategory
 import com.sz.homeaccounting2.MainActivity.Companion.getIntDate
 import com.sz.homeaccounting2.ui.operations.entities.FinanceTotalAndOperations
 import com.sz.smart_home.common.NetworkService
@@ -100,11 +103,31 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
         return db.dicts!!.accounts[accountId]!!.name
     }
 
+    fun getAccount(accountId: Int): Account? {
+        return db.dicts!!.accounts[accountId]
+    }
+
     fun getSubcategoryName(subcategoryId: Int): String {
         return db.dicts!!.subcategories[subcategoryId]!!.name
     }
 
+    fun getSubcategory(subcategoryId: Int): Subcategory? {
+        return db.dicts!!.subcategories[subcategoryId]
+    }
+
     fun getCategoryNameBySubcategoryId(subcategoryId: Int): String {
         return db.dicts!!.categories[db.dicts!!.subcategories[subcategoryId]!!.category]!!
+    }
+
+    fun getSubcategories(): List<Subcategory> {
+        return db.dicts!!.subcategories.values.toList()
+    }
+
+    fun getActiveAccounts(): List<Account> {
+        return db.buildAccounts(db.date).values.toList()
+    }
+
+    fun getOperation(id: Long): FinanceOperation {
+        TODO()
     }
 }

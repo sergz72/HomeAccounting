@@ -2,14 +2,13 @@ package com.sz.homeaccounting2
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.DialogInterface
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.view.Menu
-import android.view.View.GONE
-import android.view.View.VISIBLE
-import android.widget.TextView
+import android.view.MenuItem
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
@@ -42,11 +41,27 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         internal const val MODIFYOPERATION = 3
         internal const val PINCHECK = 4
 
-        fun alert(activity: Activity, message: String?): AlertDialog {
+        fun statusAlert(activity: Activity, message: String?): AlertDialog {
             val builder = AlertDialog.Builder(activity)
             builder.setMessage(message)
-                .setTitle("Status")
+                .setTitle(R.string.status)
             return builder.create()
+        }
+
+        fun alert(activity: Activity, message: String?) {
+            val builder = AlertDialog.Builder(activity)
+            builder.setMessage(message)
+                .setTitle(R.string.error)
+            val dialog = builder.create()
+            dialog.show()
+        }
+
+        fun alert(activity: Activity, messageId: Int) {
+            val builder = AlertDialog.Builder(activity)
+            builder.setMessage(messageId)
+                .setTitle(R.string.error)
+            val dialog = builder.create()
+            dialog.show()
         }
 
         private fun isWifiConnected(context: Activity): Boolean {
@@ -78,6 +93,51 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
                 ""
             } else String.format("%d.%03d", value / 1000, abs(value % 1000))
         }
+
+        fun confirm(activity: Activity, messageId: Int, listener: DialogInterface.OnClickListener) {
+            val builder = AlertDialog.Builder(activity)
+            builder.setMessage(messageId)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle(R.string.confirmation)
+                .setPositiveButton(android.R.string.ok, listener)
+                .setNegativeButton(android.R.string.cancel, null)
+            val dialog = builder.create()
+            dialog.show()
+        }
+
+        fun getServerAndPort(activity: AppCompatActivity): Pair<String, Int>? {
+            val settings = activity.getSharedPreferences(PREFS_NAME, 0)
+            var serverAddress = settings.getString("server_name", "127.0.0.1")!!
+
+            var port = 59998
+            val serverAddressParts = serverAddress.split(':')
+            if (serverAddressParts.size == 2) {
+                serverAddress = serverAddressParts[0]
+                val mayBePort = serverAddressParts[1].toIntOrNull()
+                if (mayBePort != null) {
+                    port = mayBePort
+                } else {
+                    alert(activity, "wrong serverAddress")
+                    return null
+                }
+            }
+            return Pair(serverAddress, port)
+        }
+
+        fun buildOperationsViewModel(activity: AppCompatActivity, serverAddress: String, port: Int):
+                Triple<FileService, DB, OperationsViewModel> {
+            val timeout = if (isWifiConnected(activity)) {2000} else {7000}
+
+            val fileService = FileService(activity.resources.openRawResource(R.raw.serverkey).readBytes(),
+                serverAddress, port, timeout, "home_accounting")
+            val service = HomeAccountingService(fileService, activity.resources.openRawResource(R.raw.key).readBytes())
+            val db = DB(service)
+
+            val operationsViewModelFactory = OperationsViewModelFactory(db)
+            val operationsViewModel = ViewModelProvider(activity, operationsViewModelFactory)[OperationsViewModel::class.java]
+
+            return Triple(fileService, db, operationsViewModel)
+        }
     }
 
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -96,17 +156,12 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        mAlert = alert(this, "Loading...")
+        mAlert = statusAlert(this, "Loading...")
 
-        val timeout = if (isWifiConnected(this)) {2000} else {7000}
-
-        fileService = FileService(resources.openRawResource(R.raw.serverkey).readBytes(),
-            "127.0.0.1", 12345, timeout, "home_accounting")
-        val service = HomeAccountingService(fileService, resources.openRawResource(R.raw.key).readBytes())
-        db = DB(service)
-
-        val operationsViewModelFactory = OperationsViewModelFactory(db)
-        _operationsViewModel = ViewModelProvider(this, operationsViewModelFactory)[OperationsViewModel::class.java]
+        val (fileService, db, viewModel) = buildOperationsViewModel(this, "127.0.0.1", 12345)
+        this.fileService = fileService
+        this.db = db
+        this._operationsViewModel = viewModel
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -171,22 +226,7 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
     }
 
     private fun updateServer() {
-        val settings = getSharedPreferences(PREFS_NAME, 0)
-        var serverAddress = settings.getString("server_name", "127.0.0.1")!!
-
-        var port = 59998
-        val serverAddressParts = serverAddress.split(':')
-        if (serverAddressParts.size == 2) {
-            serverAddress = serverAddressParts[0]
-            val mayBePort = serverAddressParts[1].toIntOrNull()
-            if (mayBePort != null) {
-                port = mayBePort
-            } else {
-                alert(this, "wrong serverAddress")
-                return
-            }
-        }
-
+        val (serverAddress, port) = getServerAndPort(this) ?: return
         fileService.updateServer(serverAddress, port)
         db.dicts = null
         refresh()
@@ -212,5 +252,26 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
                 }
             }
         }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+
+        when (item.itemId) {
+            R.id.action_settings -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                intent.putExtra("code", SETTINGS)
+                mActivityResultLauncher.launch(intent)
+                return true
+            }
+            R.id.action_refresh -> {
+                refresh()
+                return true
+            }
+        }
+
+        return super.onOptionsItemSelected(item)
     }
 }
