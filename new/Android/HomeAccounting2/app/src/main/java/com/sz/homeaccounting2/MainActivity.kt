@@ -227,9 +227,13 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
 
     private fun updateServer() {
         val (serverAddress, port) = getServerAndPort(this) ?: return
-        fileService.updateServer(serverAddress, port)
-        db.dicts = null
-        refresh()
+        try {
+            fileService.updateServer(serverAddress, port)
+            db.dicts = null
+            refresh()
+        } catch (e: Exception) {
+            alert(this, e.message)
+        }
     }
 
     private fun refresh() {
