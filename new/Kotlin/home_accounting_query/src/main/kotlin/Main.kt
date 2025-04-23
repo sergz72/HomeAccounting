@@ -1,6 +1,7 @@
 package com.sz.home_accounting.query
 
 import com.sz.file_server.lib.FileService
+import com.sz.file_server.lib.FileServiceConfig
 import com.sz.home_accounting.core.DB
 import com.sz.home_accounting.core.HomeAccountingService
 import com.sz.home_accounting.core.entities.*
@@ -28,7 +29,7 @@ class DefaultCallback(private val channel: Channel<Unit>, private val db: DB): N
 }
 
 fun usage() {
-    println("Usage: java -jar home_accounting_query.jar serverKeyFileName keyFileName hostName port db_name")
+    println("Usage: java -jar home_accounting_query.jar userId serverKeyFileName keyFileName hostName port db_name")
 }
 
 fun help() {
@@ -36,17 +37,26 @@ fun help() {
 }
 
 suspend fun main(args: Array<String>) {
-    if (args.size != 5) {
+    if (args.size != 6) {
         usage()
         return
     }
-    val serverKeyBytes = Files.readAllBytes(Paths.get(args[0]))
-    val keyBytes = Files.readAllBytes(Paths.get(args[1]))
-    val hostName = args[2]
-    val port = args[3].toInt()
-    val dbName = args[4]
+    val userId = args[0].toInt()
+    val serverKeyBytes = Files.readAllBytes(Paths.get(args[1]))
+    val keyBytes = Files.readAllBytes(Paths.get(args[2]))
+    val hostName = args[3]
+    val port = args[4].toInt()
+    val dbName = args[5]
 
-    val fileService = FileService(serverKeyBytes, hostName, port, dbName)
+    val config = FileServiceConfig(
+        userId = userId,
+        key = keyBytes,
+        hostName = hostName,
+        port = port,
+        dbName = dbName,
+        timeoutMs = 1000
+    )
+    val fileService = FileService(config)
     val service = HomeAccountingService(fileService, keyBytes)
 
     val channel = Channel<Unit>()
