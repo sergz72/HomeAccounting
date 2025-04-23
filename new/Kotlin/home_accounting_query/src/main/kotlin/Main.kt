@@ -50,7 +50,7 @@ suspend fun main(args: Array<String>) {
 
     val config = FileServiceConfig(
         userId = userId,
-        key = keyBytes,
+        key = serverKeyBytes,
         hostName = hostName,
         port = port,
         dbName = dbName,
