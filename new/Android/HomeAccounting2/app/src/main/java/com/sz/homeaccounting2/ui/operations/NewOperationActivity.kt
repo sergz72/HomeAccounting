@@ -39,8 +39,6 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
     private lateinit var viewModel: OperationsViewModel
 
-    private val mHandler = Handler(Looper.getMainLooper())
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_newoperation)

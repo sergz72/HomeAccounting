@@ -7,4 +7,18 @@
         android:singleLine="true"
         android:title="@string/pref_title_server_name" />
 
+    <EditTextPreference
+        android:defaultValue=""
+        android:key="user_id"
+        android:summary="User ID"
+        android:singleLine="true"
+        android:title="@string/pref_title_user_id" />
+
+    <EditTextPreference
+        android:defaultValue=""
+        android:key="db_name"
+        android:summary="Database name"
+        android:singleLine="true"
+        android:title="@string/pref_title_db_name" />
+
 </androidx.preference.PreferenceScreen>

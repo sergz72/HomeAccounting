@@ -23,11 +23,13 @@ import androidx.navigation.ui.setupWithNavController
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.NavHostFragment
 import com.sz.file_server.lib.FileService
 import com.sz.file_server.lib.FileServiceConfig
 import com.sz.home_accounting.core.DB
 import com.sz.home_accounting.core.HomeAccountingService
 import com.sz.homeaccounting2.databinding.ActivityMainBinding
+import com.sz.homeaccounting2.ui.operations.OperationsFragment
 import com.sz.homeaccounting2.ui.operations.OperationsViewModel
 import com.sz.homeaccounting2.ui.operations.OperationsViewModelFactory
 import com.sz.homeaccounting2.ui.pin.PinActivity
@@ -194,7 +196,9 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
 
         val drawerLayout: DrawerLayout = binding.drawerLayout
         val navView: NavigationView = binding.navView
-        val navController = findNavController(R.id.nav_host_fragment_content_main)
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
+        val navController = navHostFragment.navController
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         appBarConfiguration = AppBarConfiguration(
@@ -212,6 +216,13 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
                 is OperationsViewModel.UiState.Loading -> showLoading()
                 is OperationsViewModel.UiState.Success -> hideLoading()
                 is OperationsViewModel.UiState.Error -> showError(state.message)
+            }
+        }
+
+        binding.appBarMain.bnAdd.setOnClickListener {
+            val fragment = navHostFragment.getChildFragmentManager().fragments[0]
+            if (fragment is OperationsFragment) {
+                fragment.add()
             }
         }
 

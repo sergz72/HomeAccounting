@@ -10,4 +10,5 @@
     <color name="colorRed">#FF0000</color>
     <color name="colorYellow">#FFFF00</color>
     <color name="colorFinanceTotal">#F0F0F0</color>
+    <color name="colorTransparent">#00000000</color>
 </resources>

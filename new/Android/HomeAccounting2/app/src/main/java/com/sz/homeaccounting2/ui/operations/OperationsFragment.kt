@@ -74,8 +74,6 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
             ops.indices.forEach { binding.operationsView.expandGroup(it) }
         }
 
-
-
         return root
     }
 
@@ -88,6 +86,10 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
     }
 
     fun add() {
+        val intent = Intent(activity, NewOperationActivity::class.java)
+        intent.putExtra("date", MainActivity.getIntDate(viewModel.date.value!!))
+        intent.putExtra("code", MainActivity.NEWOPERATION)
+        mActivityResultLauncher.launch(intent)
     }
 
     override fun modify(operationId: Long) {
