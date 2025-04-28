@@ -71,6 +71,7 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
 
         viewModel.operations.observe(context as AppCompatActivity) { ops ->
             operationsViewAdapter.setOperations(ops)
+            ops.indices.forEach { binding.operationsView.expandGroup(it) }
         }
 
 

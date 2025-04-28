@@ -24,6 +24,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.sz.file_server.lib.FileService
+import com.sz.file_server.lib.FileServiceConfig
 import com.sz.home_accounting.core.DB
 import com.sz.home_accounting.core.HomeAccountingService
 import com.sz.homeaccounting2.databinding.ActivityMainBinding
@@ -105,7 +106,7 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
             dialog.show()
         }
 
-        fun getServerAndPort(activity: AppCompatActivity): Pair<String, Int>? {
+        fun getFileServiceConfig(activity: AppCompatActivity): FileServiceConfig? {
             val settings = activity.getSharedPreferences(PREFS_NAME, 0)
             var serverAddress = settings.getString("server_name", "127.0.0.1")!!
 
@@ -121,15 +122,30 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
                     return null
                 }
             }
-            return Pair(serverAddress, port)
+            var userId = settings.getString("user_id", "")!!.toIntOrNull()
+            if (userId == null) {
+                alert(activity, "wrong User ID")
+                return null
+            }
+            var dbName = settings.getString("db_name", "")!!
+            if (dbName.isEmpty()) {
+                alert(activity, "empty Database name")
+                return null
+            }
+            val timeout = if (isWifiConnected(activity)) {2000} else {7000}
+            return FileServiceConfig(
+                userId = userId,
+                key = activity.resources.openRawResource(R.raw.serverkey).readBytes(),
+                hostName = serverAddress,
+                port = port,
+                timeoutMs = timeout,
+                dbName = dbName
+            )
         }
 
-        fun buildOperationsViewModel(activity: AppCompatActivity, serverAddress: String, port: Int):
+        fun buildOperationsViewModel(activity: AppCompatActivity, config: FileServiceConfig):
                 Triple<FileService, DB, OperationsViewModel> {
-            val timeout = if (isWifiConnected(activity)) {2000} else {7000}
-
-            val fileService = FileService(activity.resources.openRawResource(R.raw.serverkey).readBytes(),
-                serverAddress, port, timeout, "home_accounting")
+            val fileService = FileService(config)
             val service = HomeAccountingService(fileService, activity.resources.openRawResource(R.raw.key).readBytes())
             val db = DB(service)
 
@@ -158,7 +174,15 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
 
         mAlert = statusAlert(this, "Loading...")
 
-        val (fileService, db, viewModel) = buildOperationsViewModel(this, "127.0.0.1", 12345)
+        val config = FileServiceConfig(
+            userId = 1,
+            key = resources.openRawResource(R.raw.serverkey).readBytes(),
+            hostName = "127.0.0.1",
+            port = 12345,
+            timeoutMs = 1000,
+            dbName = "db"
+        )
+        val (fileService, db, viewModel) = buildOperationsViewModel(this, config)
         this.fileService = fileService
         this.db = db
         this._operationsViewModel = viewModel
@@ -226,9 +250,9 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
     }
 
     private fun updateServer() {
-        val (serverAddress, port) = getServerAndPort(this) ?: return
+        val config = getFileServiceConfig(this) ?: return
         try {
-            fileService.updateServer(serverAddress, port)
+            fileService.updateConfig(config)
             db.dicts = null
             refresh()
         } catch (e: Exception) {

@@ -23,7 +23,7 @@ import com.sz.home_accounting.core.entities.Subcategory
 import com.sz.home_accounting.core.entities.SubcategoryCode
 import com.sz.homeaccounting2.MainActivity
 import com.sz.homeaccounting2.MainActivity.Companion.buildOperationsViewModel
-import com.sz.homeaccounting2.MainActivity.Companion.getServerAndPort
+import com.sz.homeaccounting2.MainActivity.Companion.getFileServiceConfig
 import com.sz.homeaccounting2.R
 import com.sz.homeaccounting2.ui.pin.NumericKeyboard
 
@@ -45,8 +45,8 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_newoperation)
 
-        val (serverAddress, port) = getServerAndPort(this) ?: return
-        val (_, _, viewModel) = buildOperationsViewModel(this, serverAddress, port)
+        val config = getFileServiceConfig(this) ?: return
+        val (_, _, viewModel) = buildOperationsViewModel(this, config)
         this.viewModel = viewModel
 
         val addOperation = findViewById<Button>(R.id.add_operation)

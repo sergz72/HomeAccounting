@@ -71,6 +71,7 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
     private fun setFinanceRecord(record: FinanceRecord) {
         this.record = record
         _operations.value = FinanceTotalAndOperations.fromFinanceRecord(record, db.dicts!!)
+            .sortedWith(compareBy({ -(it.operations?.size ?: 0) }, {getAccountName(it.accountId)}))
     }
 
     @OptIn(DelicateCoroutinesApi::class)
