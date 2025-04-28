@@ -6,12 +6,9 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 
-import java.time.LocalDate
 import java.util.ArrayList
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
@@ -19,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.sz.home_accounting.core.entities.Account
 import com.sz.home_accounting.core.entities.FinOpProperty
 import com.sz.home_accounting.core.entities.FinOpPropertyCode
+import com.sz.home_accounting.core.entities.FinanceOperation
 import com.sz.home_accounting.core.entities.Subcategory
 import com.sz.home_accounting.core.entities.SubcategoryCode
 import com.sz.homeaccounting2.MainActivity
@@ -26,6 +24,7 @@ import com.sz.homeaccounting2.MainActivity.Companion.buildOperationsViewModel
 import com.sz.homeaccounting2.MainActivity.Companion.getFileServiceConfig
 import com.sz.homeaccounting2.R
 import com.sz.homeaccounting2.ui.pin.NumericKeyboard
+import kotlin.toString
 
 class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterView.OnItemClickListener, TextWatcher,
     View.OnFocusChangeListener {
@@ -35,7 +34,6 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
     private var mSubcategoryAdapter: ArrayAdapter<Subcategory>? = null
 
     private var mOperationId: Long = 0
-    private var mDate: LocalDate? = null
 
     private lateinit var viewModel: OperationsViewModel
 
@@ -44,7 +42,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         setContentView(R.layout.activity_newoperation)
 
         val config = getFileServiceConfig(this) ?: return
-        val (_, _, viewModel) = buildOperationsViewModel(this, config)
+        val (_, viewModel) = buildOperationsViewModel(this, config)
         this.viewModel = viewModel
 
         val addOperation = findViewById<Button>(R.id.add_operation)
@@ -57,8 +55,6 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         val summa = findViewById<EditText>(R.id.summa)
 
         mOperationId = intent.getLongExtra("operationId", -1)
-        val intDate = intent.getIntExtra("date", -1)
-        mDate = LocalDate.of(intDate / 10000, intDate / 100 % 100, intDate % 100)
         addOperation.setOnClickListener(this)
 
         mSubcategoryAdapter =
@@ -75,13 +71,13 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
         secondAccount.adapter = mAccountAdapter
 
-        var items = getHints("NETW")
+        var items = MainActivity.hints!!.hints["NETW"]
         if (items != null) {
             val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items)
             network.setAdapter(adapter)
             network.threshold = 1
         }
-        items = getHints("TYPE")
+        items = MainActivity.hints!!.hints["TYPE"]
         if (items != null) {
             val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items)
             type.setAdapter(adapter)
@@ -138,10 +134,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
                 finish()
             }
         })
-    }
 
-    private fun getHints(string: String): List<String>? {
-        TODO()
     }
 
     private fun fillProperties(finOpProperties: List<FinOpProperty>?) {
@@ -178,7 +171,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         }
     }
 
-    private fun buildProperties(): Array<FinOpProperty>? {
+    private fun buildProperties(): List<FinOpProperty> {
         val secondAccount = findViewById<Spinner>(R.id.second_account)
         val network = findViewById<AutoCompleteTextView>(R.id.network)
         val type = findViewById<AutoCompleteTextView>(R.id.type)
@@ -186,7 +179,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
         return when (mSelectedSubcategory!!.code) {
             SubcategoryCode.Exch, SubcategoryCode.Trfr ->
-                arrayOf(FinOpProperty((secondAccount.selectedItem as Account).id.toLong(), null, null,
+                listOf(FinOpProperty((secondAccount.selectedItem as Account).id.toLong(), null, null,
                                              FinOpPropertyCode.SECA))
             SubcategoryCode.Fuel -> {
                 val result = ArrayList<FinOpProperty>()
@@ -200,16 +193,14 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
                 if (type.text.isNotEmpty()) {
                     result.add(FinOpProperty(null, type.text.toString(), null, FinOpPropertyCode.TYPE))
                 }
-                if (result.isNotEmpty()) result.toTypedArray() else null
+                result
             }
-            else -> null
+            else -> listOf()
         }
     }
 
     override fun onClick(v: View) {
         val summa = findViewById<EditText>(R.id.summa)
-        val account = findViewById<Spinner>(R.id.account)
-        val amount = findViewById<EditText>(R.id.amount)
 
         if (summa.text.isEmpty()) {
             MainActivity.alert(this, R.string.empty_summa)
@@ -220,11 +211,32 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
             return
         }
 
-        /*if (mOperationId == -1)
-            //add
-        else
-            //modity*/
-        TODO()
+        try {
+            val operation = newFinanceOperation(summa.text.toString())
+            if (mOperationId == -1L) {
+                //add
+                viewModel.addOperation(operation)
+            } else {
+                //modify
+                viewModel.modifyOperation(
+                    (mOperationId / 1000).toInt(), (mOperationId % 1000).toInt(),
+                    operation
+                )
+            }
+        } catch (e: Exception) {
+            MainActivity.alert(this, e.message)
+        }
+    }
+
+    fun newFinanceOperation(summaText: String): FinanceOperation {
+        val accountSpinner = findViewById<Spinner>(R.id.account)
+        val amountText = findViewById<EditText>(R.id.amount)
+        val amount = (amountText.text.toString().toDouble() * 1000).toLong()
+        val summa = (summaText.toString().toDouble() * 100).toLong()
+        val subcategory = mSelectedSubcategory!!.id
+        val account = (accountSpinner.selectedItem as Account).id
+        val properties = buildProperties()
+        return FinanceOperation(amount, summa, subcategory, account, properties)
     }
 
     override fun onItemClick(parent: AdapterView<*>, view: View, position: Int, id: Long) {

@@ -11,6 +11,7 @@ import com.sz.home_accounting.core.entities.Account
 import com.sz.home_accounting.core.entities.FinanceOperation
 import com.sz.home_accounting.core.entities.FinanceRecord
 import com.sz.home_accounting.core.entities.Subcategory
+import com.sz.homeaccounting2.MainActivity
 import com.sz.homeaccounting2.MainActivity.Companion.getIntDate
 import com.sz.homeaccounting2.ui.operations.entities.FinanceTotalAndOperations
 import com.sz.smart_home.common.NetworkService
@@ -57,6 +58,7 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
 
     fun setDate(value: LocalDate) {
         _date.value = value
+        db.date = getIntDate(value)
         refresh()
     }
 
@@ -136,6 +138,42 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
     }
 
     fun getOperation(id: Long): FinanceOperation {
+        TODO()
+    }
+
+    fun addOperation(op: FinanceOperation) {
+        db.add(op, object : NetworkService.Callback<FinanceRecord> {
+            override fun onResponse(response: FinanceRecord) {
+                mHandler.post {
+                    setFinanceRecord(response)
+                    _uiState.value = UiState.Success
+                }
+            }
+
+            override fun onFailure(t: Throwable) {
+                mHandler.post { _uiState.value = UiState.Error(t.message ?: "Unknown error") }
+            }
+        })
+    }
+
+    fun modifyOperation(accountIdx: Int, operationIdx: Int, op: FinanceOperation) {
+        val id = findOperationId(accountIdx, operationIdx)
+        db.data!!.operations[id] = op
+        db.updateOperations(object : NetworkService.Callback<FinanceRecord> {
+            override fun onResponse(response: FinanceRecord) {
+                mHandler.post {
+                    setFinanceRecord(response)
+                    _uiState.value = UiState.Success
+                }
+            }
+
+            override fun onFailure(t: Throwable) {
+                mHandler.post { _uiState.value = UiState.Error(t.message ?: "Unknown error") }
+            }
+        })
+    }
+
+    private fun findOperationId(accountId: Int, operatinsId: Int): Int {
         TODO()
     }
 }

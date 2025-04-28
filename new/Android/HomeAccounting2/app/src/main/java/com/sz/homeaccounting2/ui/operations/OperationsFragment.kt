@@ -82,12 +82,8 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
         _binding = null
     }
 
-    fun refresh() {
-    }
-
     fun add() {
         val intent = Intent(activity, NewOperationActivity::class.java)
-        intent.putExtra("date", MainActivity.getIntDate(viewModel.date.value!!))
         intent.putExtra("code", MainActivity.NEWOPERATION)
         mActivityResultLauncher.launch(intent)
     }

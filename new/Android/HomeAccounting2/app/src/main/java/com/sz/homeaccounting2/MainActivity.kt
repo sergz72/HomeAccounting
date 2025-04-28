@@ -2,11 +2,13 @@ package com.sz.homeaccounting2
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.util.Base64
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.result.ActivityResult
@@ -22,8 +24,12 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
+import com.google.gson.Gson
 import com.sz.file_server.lib.FileService
 import com.sz.file_server.lib.FileServiceConfig
 import com.sz.home_accounting.core.DB
@@ -33,8 +39,15 @@ import com.sz.homeaccounting2.ui.operations.OperationsFragment
 import com.sz.homeaccounting2.ui.operations.OperationsViewModel
 import com.sz.homeaccounting2.ui.operations.OperationsViewModelFactory
 import com.sz.homeaccounting2.ui.pin.PinActivity
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlin.math.abs
+
+private val Context.dataStore by preferencesDataStore(name = "settings")
+
+data class Hints(val hints: Map<String, List<String>>)
 
 class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult> {
     companion object {
@@ -43,6 +56,15 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         internal const val NEWOPERATION = 2
         internal const val MODIFYOPERATION = 3
         internal const val PINCHECK = 4
+
+        private var db: DB? = null
+
+        private val mHintsKey = stringPreferencesKey("hints")
+
+        private var _hints: Hints? = null
+
+        val hints
+            get() = _hints
 
         fun statusAlert(activity: Activity, message: String?): AlertDialog {
             val builder = AlertDialog.Builder(activity)
@@ -146,15 +168,17 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         }
 
         fun buildOperationsViewModel(activity: AppCompatActivity, config: FileServiceConfig):
-                Triple<FileService, DB, OperationsViewModel> {
+                Pair<FileService, OperationsViewModel> {
             val fileService = FileService(config)
             val service = HomeAccountingService(fileService, activity.resources.openRawResource(R.raw.key).readBytes())
-            val db = DB(service)
+            if (db == null) {
+                db = DB(service)
+            }
 
-            val operationsViewModelFactory = OperationsViewModelFactory(db)
+            val operationsViewModelFactory = OperationsViewModelFactory(db!!)
             val operationsViewModel = ViewModelProvider(activity, operationsViewModelFactory)[OperationsViewModel::class.java]
 
-            return Triple(fileService, db, operationsViewModel)
+            return Pair(fileService, operationsViewModel)
         }
     }
 
@@ -163,7 +187,6 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
     private lateinit var mActivityResultLauncher: ActivityResultLauncher<Intent>
 
     private lateinit var fileService: FileService
-    private lateinit var db: DB
     private lateinit var _operationsViewModel: OperationsViewModel
 
     val operationsViewModel: OperationsViewModel
@@ -184,9 +207,8 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
             timeoutMs = 1000,
             dbName = "db"
         )
-        val (fileService, db, viewModel) = buildOperationsViewModel(this, config)
+        val (fileService, viewModel) = buildOperationsViewModel(this, config)
         this.fileService = fileService
-        this.db = db
         this._operationsViewModel = viewModel
 
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -226,7 +248,23 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
             }
         }
 
+        loadHints()
+
         showPinActivity()
+    }
+
+    fun loadHints() {
+        lifecycleScope.launch {
+            val hintsString = dataStore.data
+                .map { preferences ->
+                    // No type safety.
+                    preferences[mHintsKey] ?: ""
+                }.first()
+            if (hintsString.isNotEmpty()) {
+                val decoded = Base64.decode(hintsString, Base64.DEFAULT).toString(Charsets.UTF_8)
+                _hints = Gson().fromJson(decoded, Hints::class.java)
+            }
+        }
     }
 
     private fun showLoading() {
@@ -264,7 +302,7 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         val config = getFileServiceConfig(this) ?: return
         try {
             fileService.updateConfig(config)
-            db.dicts = null
+            db?.dicts = null
             refresh()
         } catch (e: Exception) {
             alert(this, e.message)
