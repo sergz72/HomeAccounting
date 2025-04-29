@@ -58,7 +58,6 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
 
     fun setDate(value: LocalDate) {
         _date.value = value
-        db.date = getIntDate(value)
         refresh()
     }
 
@@ -137,10 +136,6 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
         return db.buildAccounts(db.date).values.toList()
     }
 
-    fun getOperation(id: Long): FinanceOperation {
-        TODO()
-    }
-
     fun addOperation(op: FinanceOperation) {
         db.add(op, object : NetworkService.Callback<FinanceRecord> {
             override fun onResponse(response: FinanceRecord) {
@@ -158,8 +153,7 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
 
     fun modifyOperation(accountIdx: Int, operationIdx: Int, op: FinanceOperation) {
         val id = findOperationId(accountIdx, operationIdx)
-        db.data!!.operations[id] = op
-        db.updateOperations(object : NetworkService.Callback<FinanceRecord> {
+        db.update(id, op, object : NetworkService.Callback<FinanceRecord> {
             override fun onResponse(response: FinanceRecord) {
                 mHandler.post {
                     setFinanceRecord(response)
@@ -173,7 +167,17 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
         })
     }
 
-    private fun findOperationId(accountId: Int, operatinsId: Int): Int {
-        TODO()
+    fun getOperation(id: Long): FinanceOperation {
+        val id = findOperationId((id / 1000).toInt(), (id % 1000).toInt())
+        return db.data!!.operations[id]
+    }
+
+    private fun findOperationId(accountId: Int, operationId: Int): Int {
+        val op = operations.value!![accountId].operations!![operationId]
+        return record!!.operations
+            .mapIndexed { idx, op -> idx to op }
+            .filter { (_, rop) -> op.account == rop.account && op.subcategory == rop.subcategory }
+            .map { it -> it.first }
+            .first()
     }
 }

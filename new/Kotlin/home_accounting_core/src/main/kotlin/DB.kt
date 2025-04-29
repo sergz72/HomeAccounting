@@ -27,6 +27,9 @@ class DB(private val service: HomeAccountingService) {
     val dicts
         get() = _dicts
 
+    fun resetDicts() {
+        _dicts = null
+    }
     fun init(callback: NetworkService.Callback<FinanceRecord>) {
         service.getDicts(object: NetworkService.Callback<Dicts> {
             override fun onResponse(response: Dicts) {

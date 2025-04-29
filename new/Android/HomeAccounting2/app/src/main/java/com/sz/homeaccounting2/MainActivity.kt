@@ -302,7 +302,7 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         val config = getFileServiceConfig(this) ?: return
         try {
             fileService.updateConfig(config)
-            db?.dicts = null
+            db?.resetDicts()
             refresh()
         } catch (e: Exception) {
             alert(this, e.message)

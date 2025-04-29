@@ -19,11 +19,13 @@ import com.sz.home_accounting.core.entities.FinOpPropertyCode
 import com.sz.home_accounting.core.entities.FinanceOperation
 import com.sz.home_accounting.core.entities.Subcategory
 import com.sz.home_accounting.core.entities.SubcategoryCode
+import com.sz.homeaccounting2.ExpressionParser
 import com.sz.homeaccounting2.MainActivity
 import com.sz.homeaccounting2.MainActivity.Companion.buildOperationsViewModel
 import com.sz.homeaccounting2.MainActivity.Companion.getFileServiceConfig
 import com.sz.homeaccounting2.R
 import com.sz.homeaccounting2.ui.pin.NumericKeyboard
+import kotlin.math.roundToLong
 import kotlin.toString
 
 class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterView.OnItemClickListener, TextWatcher,
@@ -231,8 +233,10 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
     fun newFinanceOperation(summaText: String): FinanceOperation {
         val accountSpinner = findViewById<Spinner>(R.id.account)
         val amountText = findViewById<EditText>(R.id.amount)
-        val amount = (amountText.text.toString().toDouble() * 1000).toLong()
-        val summa = (summaText.toString().toDouble() * 100).toLong()
+        val amount = if (amountText.text.isEmpty()) { null } else {
+            (ExpressionParser().eval(amountText.text.toString()) * 1000).roundToLong()
+        }
+        val summa = (ExpressionParser().eval(summaText) * 100).roundToLong()
         val subcategory = mSelectedSubcategory!!.id
         val account = (accountSpinner.selectedItem as Account).id
         val properties = buildProperties()
