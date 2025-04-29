@@ -55,4 +55,8 @@ data class Account(
         buffer.putInt(activeTo ?: 0)
         buffer.putShort((cashAccount ?: 0).toShort())
     }
+
+    override fun toString(): String {
+        return name
+    }
 }

@@ -260,9 +260,11 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
                     // No type safety.
                     preferences[mHintsKey] ?: ""
                 }.first()
-            if (hintsString.isNotEmpty()) {
+            _hints = if (hintsString.isNotEmpty()) {
                 val decoded = Base64.decode(hintsString, Base64.DEFAULT).toString(Charsets.UTF_8)
-                _hints = Gson().fromJson(decoded, Hints::class.java)
+                Gson().fromJson(decoded, Hints::class.java)
+            } else {
+                Hints(mapOf())
             }
         }
     }

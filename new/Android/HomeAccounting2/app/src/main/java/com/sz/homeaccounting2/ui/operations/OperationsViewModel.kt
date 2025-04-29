@@ -11,6 +11,7 @@ import com.sz.home_accounting.core.entities.Account
 import com.sz.home_accounting.core.entities.FinanceOperation
 import com.sz.home_accounting.core.entities.FinanceRecord
 import com.sz.home_accounting.core.entities.Subcategory
+import com.sz.home_accounting.core.entities.SubcategoryCode
 import com.sz.homeaccounting2.MainActivity
 import com.sz.homeaccounting2.MainActivity.Companion.getIntDate
 import com.sz.homeaccounting2.ui.operations.entities.FinanceTotalAndOperations
@@ -20,6 +21,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+
+data class SubcategoryWithDetailedName(val id: Int, val code: SubcategoryCode, val name: String) {
+    override fun toString(): String {
+        return name
+    }
+}
 
 class OperationsViewModelFactory(private val db: DB) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -56,6 +63,10 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
     }
     val date: LiveData<LocalDate> = _date
 
+    private var _subcategoriesWithDetailedName: Map<Int, SubcategoryWithDetailedName> = mapOf()
+    val subcategoriesWithDetailedName
+        get() = _subcategoriesWithDetailedName
+
     fun setDate(value: LocalDate) {
         _date.value = value
         refresh()
@@ -73,6 +84,13 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
         this.record = record
         _operations.value = FinanceTotalAndOperations.fromFinanceRecord(record, db.dicts!!)
             .sortedWith(compareBy({ -(it.operations?.size ?: 0) }, {getAccountName(it.accountId)}))
+    }
+
+    fun buildSubcategoriesWithDetailedName() {
+        _subcategoriesWithDetailedName = db.dicts!!.subcategories
+            .map { it.key to SubcategoryWithDetailedName(it.key, it.value.code,
+                                it.value.name + " - " + getCategoryNameBySubcategoryId(it.key)) }
+            .toMap()
     }
 
     @OptIn(DelicateCoroutinesApi::class)

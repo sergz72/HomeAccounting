@@ -30,10 +30,10 @@ import kotlin.toString
 
 class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterView.OnItemClickListener, TextWatcher,
     View.OnFocusChangeListener {
-    private var mSelectedSubcategory: Subcategory? = null
+    private var mSelectedSubcategory: SubcategoryWithDetailedName? = null
 
     private var mAccountAdapter: ArrayAdapter<Account>? = null
-    private var mSubcategoryAdapter: ArrayAdapter<Subcategory>? = null
+    private var mSubcategoryAdapter: ArrayAdapter<SubcategoryWithDetailedName>? = null
 
     private var mOperationId: Long = 0
 
@@ -45,6 +45,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
         val config = getFileServiceConfig(this) ?: return
         val (_, viewModel) = buildOperationsViewModel(this, config)
+        viewModel.buildSubcategoriesWithDetailedName()
         this.viewModel = viewModel
 
         val addOperation = findViewById<Button>(R.id.add_operation)
@@ -60,9 +61,9 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         addOperation.setOnClickListener(this)
 
         mSubcategoryAdapter =
-            ArrayAdapter<Subcategory>(this, android.R.layout.simple_spinner_dropdown_item,
-                                        viewModel.getSubcategories())
-        subcategoryName.setAdapter<ArrayAdapter<Subcategory>>(mSubcategoryAdapter)
+            ArrayAdapter<SubcategoryWithDetailedName>(this, android.R.layout.simple_spinner_dropdown_item,
+                                        viewModel.subcategoriesWithDetailedName.values.toList())
+        subcategoryName.setAdapter<ArrayAdapter<SubcategoryWithDetailedName>>(mSubcategoryAdapter)
         subcategoryName.threshold = 3
         subcategoryName.onItemClickListener = this
         subcategoryName.addTextChangedListener(this)
@@ -90,7 +91,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         if (mOperationId != -1L) {
             addOperation.setText(R.string.modify_operation)
             val operation = viewModel.getOperation(mOperationId)
-            val sc = viewModel.getSubcategory(operation.subcategory)
+            val sc = viewModel.subcategoriesWithDetailedName[operation.subcategory]
             if (sc == null) {
                 MainActivity.alert(this, "Unknown subcategory id: " + operation.subcategory)
                 return
@@ -244,7 +245,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
     }
 
     override fun onItemClick(parent: AdapterView<*>, view: View, position: Int, id: Long) {
-        mSelectedSubcategory = parent.getItemAtPosition(position) as Subcategory
+        mSelectedSubcategory = parent.getItemAtPosition(position) as SubcategoryWithDetailedName
         updateProperties()
     }
 
