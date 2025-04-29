@@ -35,7 +35,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
     private var mAccountAdapter: ArrayAdapter<Account>? = null
     private var mSubcategoryAdapter: ArrayAdapter<SubcategoryWithDetailedName>? = null
 
-    private var mOperationId: Long = 0
+    private var mOperationId: Int = 0
 
     private lateinit var viewModel: OperationsViewModel
 
@@ -57,7 +57,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         val amount = findViewById<EditText>(R.id.amount)
         val summa = findViewById<EditText>(R.id.summa)
 
-        mOperationId = intent.getLongExtra("operationId", -1)
+        mOperationId = intent.getIntExtra("operationId", -1)
         addOperation.setOnClickListener(this)
 
         mSubcategoryAdapter =
@@ -88,7 +88,7 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
         }
 
         mSelectedSubcategory = null
-        if (mOperationId != -1L) {
+        if (mOperationId != -1) {
             addOperation.setText(R.string.modify_operation)
             val operation = viewModel.getOperation(mOperationId)
             val sc = viewModel.subcategoriesWithDetailedName[operation.subcategory]
@@ -216,16 +216,16 @@ class NewOperationActivity : AppCompatActivity(), View.OnClickListener, AdapterV
 
         try {
             val operation = newFinanceOperation(summa.text.toString())
-            if (mOperationId == -1L) {
+            if (mOperationId == -1) {
                 //add
                 viewModel.addOperation(operation)
             } else {
                 //modify
-                viewModel.modifyOperation(
-                    (mOperationId / 1000).toInt(), (mOperationId % 1000).toInt(),
-                    operation
-                )
+                viewModel.modifyOperation(mOperationId, operation)
             }
+
+            setResult(RESULT_OK, intent)
+            finish()
         } catch (e: Exception) {
             MainActivity.alert(this, e.message)
         }

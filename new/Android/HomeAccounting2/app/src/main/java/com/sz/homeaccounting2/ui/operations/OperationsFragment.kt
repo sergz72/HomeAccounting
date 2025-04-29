@@ -89,8 +89,9 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
     }
 
     override fun modify(operationId: Long) {
+        val opId = viewModel.findOperationId((operationId / 1000).toInt(), (operationId % 1000).toInt())
         val intent = Intent(activity, NewOperationActivity::class.java)
-        intent.putExtra("operationId", operationId)
+        intent.putExtra("operationId", opId)
         intent.putExtra("code", MainActivity.MODIFYOPERATION)
         mActivityResultLauncher.launch(intent)
     }
@@ -101,6 +102,8 @@ class OperationsFragment : Fragment(), View.OnClickListener, OperationsViewAdapt
 
     private fun realDelete(operationId: Long): DialogInterface.OnClickListener {
         return DialogInterface.OnClickListener { _, _ ->
+            val opId = viewModel.findOperationId((operationId / 1000).toInt(), (operationId % 1000).toInt())
+            viewModel.deleteOperation(opId)
         }
     }
 

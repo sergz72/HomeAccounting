@@ -169,9 +169,8 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
         })
     }
 
-    fun modifyOperation(accountIdx: Int, operationIdx: Int, op: FinanceOperation) {
-        val id = findOperationId(accountIdx, operationIdx)
-        db.update(id, op, object : NetworkService.Callback<FinanceRecord> {
+    fun modifyOperation(operationId: Int, op: FinanceOperation) {
+        db.update(operationId, op, object : NetworkService.Callback<FinanceRecord> {
             override fun onResponse(response: FinanceRecord) {
                 mHandler.post {
                     setFinanceRecord(response)
@@ -185,12 +184,26 @@ class OperationsViewModel(private val db: DB) : ViewModel() {
         })
     }
 
-    fun getOperation(id: Long): FinanceOperation {
-        val id = findOperationId((id / 1000).toInt(), (id % 1000).toInt())
+    fun deleteOperation(operationId: Int) {
+        db.delete(operationId, object : NetworkService.Callback<FinanceRecord> {
+            override fun onResponse(response: FinanceRecord) {
+                mHandler.post {
+                    setFinanceRecord(response)
+                    _uiState.value = UiState.Success
+                }
+            }
+
+            override fun onFailure(t: Throwable) {
+                mHandler.post { _uiState.value = UiState.Error(t.message ?: "Unknown error") }
+            }
+        })
+    }
+
+    fun getOperation(id: Int): FinanceOperation {
         return db.data!!.operations[id]
     }
 
-    private fun findOperationId(accountId: Int, operationId: Int): Int {
+    fun findOperationId(accountId: Int, operationId: Int): Int {
         val op = operations.value!![accountId].operations!![operationId]
         return record!!.operations
             .mapIndexed { idx, op -> idx to op }
