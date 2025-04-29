@@ -136,13 +136,12 @@ fun showFinanceRecord(db: DB, channel: Channel<Unit>, date: Int) {
 
 fun update(db: DB, channel: Channel<Unit>, id: Int, newSumma: Long) {
     val op = db.data!!.operations[id]
-    db.data!!.operations[id] = FinanceOperation(op.amount, newSumma, op.subcategory, op.account, op.properties)
-    db.updateOperations(DefaultCallback(channel, db))
+    val newOp = FinanceOperation(op.amount, newSumma, op.subcategory, op.account, op.properties)
+    db.update(id, newOp, DefaultCallback(channel, db))
 }
 
 fun delete(db: DB, channel: Channel<Unit>, id: Int) {
-    db.data!!.operations.removeAt(id)
-    db.updateOperations(DefaultCallback(channel, db))
+    db.delete(id, DefaultCallback(channel, db))
 }
 
 fun add(db: DB, channel: Channel<Unit>) {

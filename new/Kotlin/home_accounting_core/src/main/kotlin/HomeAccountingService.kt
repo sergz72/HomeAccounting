@@ -45,8 +45,8 @@ class HomeAccountingService(private val fileService: FileService, private val ke
         })
     }
 
-    fun getFinanceRecords(from: Int, callback: Callback<SortedMap<Int, FinanceRecord>>) {
-        fileService.get(from, 99999999, object: Callback<GetResponse> {
+    fun getFinanceRecords(from: Int, to: Int, callback: Callback<SortedMap<Int, FinanceRecord>>) {
+        fileService.get(from, to, object: Callback<GetResponse> {
             override fun onResponse(response: GetResponse) {
                 try {
                     callback.onResponse(

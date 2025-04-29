@@ -15,14 +15,22 @@ class DB(private val service: HomeAccountingService) {
         }
     }
 
-    var date: Int = now
-    var data: FinanceRecord? = null
-    var dicts: Dicts? = null
+    private var _date = now
+    val date: Int
+        get() = _date
+
+    private var _data: FinanceRecord? = null
+    val data
+        get() = _data
+
+    private var _dicts: Dicts? = null
+    val dicts
+        get() = _dicts
 
     fun init(callback: NetworkService.Callback<FinanceRecord>) {
         service.getDicts(object: NetworkService.Callback<Dicts> {
             override fun onResponse(response: Dicts) {
-                dicts = response
+                _dicts = response
                 getFinanceRecord(null, callback)
             }
 
@@ -38,11 +46,11 @@ class DB(private val service: HomeAccountingService) {
             return
         }
         if (dateIn != null) {
-            date = dateIn
+            _date = dateIn
         }
         service.getFinanceRecord(date, object: NetworkService.Callback<Pair<Int, FinanceRecord>> {
             override fun onResponse(response: Pair<Int, FinanceRecord>) {
-                data = if (response.first == date)
+                _data = if (response.first == date)
                     response.second
                 else
                     response.second.buildNextRecord(dicts!!)
@@ -55,22 +63,65 @@ class DB(private val service: HomeAccountingService) {
         })
     }
 
-    fun add(op: FinanceOperation, callback: NetworkService.Callback<FinanceRecord>) {
+    private fun validateOperation(op: FinanceOperation, excludedIndex: Int,
+                                  callback: NetworkService.Callback<FinanceRecord>): Boolean {
+        if (data!!.operations
+            .filterIndexed { idx, op -> idx != excludedIndex }
+            .any { it.subcategory == op.subcategory && it.account == op.account }) {
+            callback.onFailure(IllegalStateException("Duplicate operation"))
+            return false
+        }
+        return true
+    }
+
+    private fun checkDictsAndData(callback: NetworkService.Callback<FinanceRecord>): Boolean {
         if (dicts == null || data == null) {
             callback.onFailure(IllegalStateException("Dicts or data are not initialized"))
-            return
+            return false
         }
+        return true
+    }
+
+    fun add(op: FinanceOperation, callback: NetworkService.Callback<FinanceRecord>) {
+        if (!checkDictsAndData(callback))
+            return
+        if (!validateOperation(op, -1, callback))
+            return
+        data!!.add(op)
         try {
-            data!!.add(op)
             updateOperations(callback)
         } catch (t: Throwable) {
             callback.onFailure(t)
         }
     }
 
-    fun updateOperations(callback: NetworkService.Callback<FinanceRecord>) {
+    fun update(idx: Int, op: FinanceOperation, callback: NetworkService.Callback<FinanceRecord>) {
+        if (!checkDictsAndData(callback))
+            return
+        if (!validateOperation(op, idx, callback))
+            return
+        data!!.operations[idx] = op
+        try {
+            updateOperations(callback)
+        } catch (t: Throwable) {
+            callback.onFailure(t)
+        }
+    }
+
+    fun delete(idx: Int, callback: NetworkService.Callback<FinanceRecord>) {
+        if (!checkDictsAndData(callback))
+            return
+        data!!.operations.removeAt(idx)
+        try {
+            updateOperations(callback)
+        } catch (t: Throwable) {
+            callback.onFailure(t)
+        }
+    }
+
+    private fun updateOperations(callback: NetworkService.Callback<FinanceRecord>) {
         val dbVersion = service.dbVersion
-        service.getFinanceRecords(date, object: NetworkService.Callback<SortedMap<Int, FinanceRecord>> {
+        service.getFinanceRecords(date, 99999999, object: NetworkService.Callback<SortedMap<Int, FinanceRecord>> {
             override fun onResponse(response: SortedMap<Int, FinanceRecord>) {
                 if (service.dbVersion != dbVersion) {
                     callback.onFailure(IllegalStateException("DB version mismatch"))
@@ -88,7 +139,7 @@ class DB(private val service: HomeAccountingService) {
         })
     }
 
-    fun save(records: SortedMap<Int, FinanceRecord>, callback: NetworkService.Callback<FinanceRecord>) {
+    private fun save(records: SortedMap<Int, FinanceRecord>, callback: NetworkService.Callback<FinanceRecord>) {
         service.set(records, object: NetworkService.Callback<Unit> {
             override fun onResponse(response: Unit) {
                 getFinanceRecord(null, callback)
@@ -100,7 +151,7 @@ class DB(private val service: HomeAccountingService) {
         })
     }
 
-    fun calculateTotals(valueMap: SortedMap<Int, FinanceRecord>)
+    private fun calculateTotals(valueMap: SortedMap<Int, FinanceRecord>)
     {
         var changes: FinanceChanges? = null
         for (kv in valueMap) {
