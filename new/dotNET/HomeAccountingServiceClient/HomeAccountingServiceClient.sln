@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomeAccountingServiceClientLibrary", "HomeAccountingServiceClientLibrary\HomeAccountingServiceClientLibrary.csproj", "{BCFCC826-5DAB-49BE-9B5B-ADAFD73D04F2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileServiceClientLibrary", "..\NetworkServiceClient\FileServiceClientLibrary\FileServiceClientLibrary.csproj", "{971CE16D-94E0-4EEA-A55B-8D2210A6902F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkServiceClientLibrary", "..\NetworkServiceClient\NetworkServiceClientLibrary\NetworkServiceClientLibrary.csproj", "{FD13055F-7094-4CE3-99B5-5998319EE3B1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BCFCC826-5DAB-49BE-9B5B-ADAFD73D04F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCFCC826-5DAB-49BE-9B5B-ADAFD73D04F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCFCC826-5DAB-49BE-9B5B-ADAFD73D04F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCFCC826-5DAB-49BE-9B5B-ADAFD73D04F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{971CE16D-94E0-4EEA-A55B-8D2210A6902F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{971CE16D-94E0-4EEA-A55B-8D2210A6902F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{971CE16D-94E0-4EEA-A55B-8D2210A6902F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{971CE16D-94E0-4EEA-A55B-8D2210A6902F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD13055F-7094-4CE3-99B5-5998319EE3B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD13055F-7094-4CE3-99B5-5998319EE3B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD13055F-7094-4CE3-99B5-5998319EE3B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD13055F-7094-4CE3-99B5-5998319EE3B1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
