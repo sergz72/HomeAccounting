@@ -2,7 +2,7 @@ namespace HomeAccountingServiceClientLibrary.entities;
 
 public record Dicts(Dictionary<int, Account> Accounts, Dictionary<int, string> Categories,
                     Dictionary<int, Subcategory> Subcategories,
-                    Dictionary<SubcategoryCode, FinOpPropertyCode[]> subcategoryToPropertyCodeMap)
+                    Dictionary<SubcategoryCode, FinOpPropertyCode[]> SubcategoryToPropertyCodeMap)
 {
     public static Dicts FromBinary(MemoryStream stream)
     {

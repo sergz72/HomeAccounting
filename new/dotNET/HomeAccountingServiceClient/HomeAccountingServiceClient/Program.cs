@@ -15,30 +15,27 @@ var config = new FileServiceConfig(settings.UserId, serverKey, settings.HostName
                                     settings.DbName);
 var service = new HomeAccountingService(config, key);
 
-var dicts = service.GetDicts();
+var db = new Db(config, key, settings.MaxRequestMonths, new ConsoleLogger());
 Console.WriteLine("Dicts retrieved.");
 
-var dateTo = DateTime.UtcNow;
-var records = new SortedDictionary<int, FinanceRecord>();
-    
-for (;;)
-{
-    var dateFrom = dateTo.AddMonths(-settings.MaxRequestMonths);
-    var data = service.GetFinanceRecords(DateToInt(dateFrom), DateToInt(dateTo));
-    if (data.Count == 0)
-        break;
-    foreach (var record in data)
-        records.Add(record.Key, record.Value);
-    dateTo = dateFrom.AddDays(-1);
-}
-
-Console.WriteLine("{0} Finance records retrieved.", records.Count);
+db.GetAll();
+Console.WriteLine("{0} Finance records retrieved.", db.RecordCount);
+db.Test();
+Console.WriteLine("Db test finished.");
 
 return;
 
-int DateToInt(DateTime date)
+internal class ConsoleLogger: ILogger
 {
-    return date.Year * 10000 + date.Month * 100 + date.Day;
+    public void Error(string message)
+    {
+        Console.WriteLine("ERROR: {0}", message);
+    }
+
+    public void Info(string message)
+    {
+        Console.WriteLine("INFO: {0}", message);
+    }
 }
 
 record Settings(
