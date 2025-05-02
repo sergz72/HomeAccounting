@@ -34,4 +34,15 @@ public record Dicts(Dictionary<int, Account> Accounts, Dictionary<int, string> C
         }
         return result;
     }
+    
+    public Account GetAccount(int accountId)
+    {
+        return Accounts[accountId];
+    }
+
+    public int GetCategoryId(int subcategoryId)
+    {
+        return Subcategories[subcategoryId].Category;
+    }
+
 }
