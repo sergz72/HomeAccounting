@@ -1,6 +1,7 @@
-using System.Runtime.InteropServices.ComTypes;
+using System.Text.Json;
 using FileServiceClientLibrary;
 using HomeAccountingServiceClientLibrary.entities;
+using File = System.IO.File;
 
 namespace HomeAccountingServiceClientLibrary;
 
@@ -12,10 +13,34 @@ public class Db
     private readonly int _maxRequestMonths;
     private readonly ILogger _logger;
     private readonly SortedDictionary<int, FinanceRecord> _records;
+    private readonly int _minDate;
+
     private DateTime _from, _to;
     public int RecordCount => _records.Count;
+
+    public Db(string configFileName, ILogger logger, int retryCount = 3)
+    {
+        var jsonString = File.ReadAllText(configFileName);
+        var settings = JsonSerializer.Deserialize<Settings>(jsonString) ??
+                       throw new Exception("Invalid settings file");
+        settings.Validate();
+        var serverKey = File.ReadAllBytes(settings.ServerKeyFileName);
+        var key = File.ReadAllBytes(settings.KeyFileName);
+
+        var config = new FileServiceConfig(settings.UserId, serverKey, settings.HostName, settings.Port, settings.TimeoutMs,
+            settings.DbName);
+        _service = new HomeAccountingService(config, key);
+        _retryCount = retryCount;
+        _maxRequestMonths = settings.MaxRequestMonths;
+        _logger = logger;
+        _dicts = Get(_service.GetDicts);
+        _records = new SortedDictionary<int, FinanceRecord>();
+        _from = DateTime.MinValue;
+        _to = DateTime.MinValue;
+        _minDate = settings.MinDate;
+    }
     
-    public Db(FileServiceConfig config, byte[] key, int maxRequestMonths, ILogger logger, int retryCount = 3)
+    public Db(FileServiceConfig config, byte[] key, int maxRequestMonths, ILogger logger, int minDate, int retryCount = 3)
     {
         _retryCount = retryCount;
         _logger = logger;
@@ -25,6 +50,7 @@ public class Db
         _records = new SortedDictionary<int, FinanceRecord>();
         _from = DateTime.MinValue;
         _to = DateTime.MinValue;
+        _minDate = minDate;
     }
     
     private T Get<T>(Func<T> f)
@@ -109,6 +135,14 @@ public class Db
         };
     }
 
+    public DateTime BuildDate(string date)
+    {
+        var intDate = int.Parse(date);
+        if (intDate < _minDate)
+            throw new Exception("Invalid date");
+        return new DateTime(intDate / 100, intDate % 100, 1);
+    }
+    
     private List<ReportRow> BuildByMonthReport(DateTime fromDate, DateTime toDate, int? account, int? category, int? subcategory)
     {
         var result = new List<ReportRow>();
@@ -276,4 +310,24 @@ public interface ILogger
 {
     void Error(string message);
     void Info(string message);
+}
+
+internal record Settings(
+    int UserId,
+    string ServerKeyFileName,
+    string KeyFileName,
+    string HostName,
+    ushort Port,
+    int TimeoutMs,
+    string DbName,
+    int MaxRequestMonths,
+    int MinDate)
+{
+    public void Validate()
+    {
+        if (UserId == 0 || string.IsNullOrEmpty(ServerKeyFileName) || string.IsNullOrEmpty(KeyFileName) ||
+            string.IsNullOrEmpty(HostName) || Port == 0 || string.IsNullOrEmpty(DbName) || MaxRequestMonths <= 0 ||
+            MinDate <= 0)
+            throw new Exception("Settings file validation error");
+    }
 }

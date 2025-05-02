@@ -1,7 +1,4 @@
-﻿using System.Text.Json;
-using FileServiceClientLibrary;
-using HomeAccountingServiceClientLibrary;
-using File = System.IO.File;
+﻿using HomeAccountingServiceClientLibrary;
 
 if (args.Length < 2)
 {
@@ -9,18 +6,8 @@ if (args.Length < 2)
     return;
 }
 
-var jsonString = File.ReadAllText(args[0]);
-var settings = JsonSerializer.Deserialize<Settings>(jsonString) ??
-            throw new Exception("Invalid settings file");
-settings.Validate();
-var serverKey = File.ReadAllBytes(settings.ServerKeyFileName);
-var key = File.ReadAllBytes(settings.KeyFileName);
 
-var config = new FileServiceConfig(settings.UserId, serverKey, settings.HostName, settings.Port, settings.TimeoutMs,
-                                    settings.DbName);
-var service = new HomeAccountingService(config, key);
-
-var db = new Db(config, key, settings.MaxRequestMonths, new ConsoleLogger());
+var db = new Db(args[0], new ConsoleLogger());
 Console.WriteLine("Dicts retrieved.");
 
 db.GetAll();
@@ -37,9 +24,39 @@ switch (args[1])
             Usage();
         else
         {
-            var from = BuildDate(args[2]); 
-            var to = BuildDate(args[3]);
+            var from = db.BuildDate(args[2]); 
+            var to = db.BuildDate(args[3]);
             PrintReportResult(db.BuildReport(from, to, ReportGrouping.Month, null, null, null));
+        }
+        break;
+    case "account_report":
+        if (args.Length != 4)
+            Usage();
+        else
+        {
+            var from = db.BuildDate(args[2]); 
+            var to = db.BuildDate(args[3]);
+            PrintReportResult(db.BuildReport(from, to, ReportGrouping.Account, null, null, null));
+        }
+        break;
+    case "category_report":
+        if (args.Length != 4)
+            Usage();
+        else
+        {
+            var from = db.BuildDate(args[2]); 
+            var to = db.BuildDate(args[3]);
+            PrintReportResult(db.BuildReport(from, to, ReportGrouping.Category, null, null, null));
+        }
+        break;
+    case "detailed_report":
+        if (args.Length != 4)
+            Usage();
+        else
+        {
+            var from = db.BuildDate(args[2]); 
+            var to = db.BuildDate(args[3]);
+            PrintReportResult(db.BuildReport(from, to, ReportGrouping.Detailed, null, null, null));
         }
         break;
     default:
@@ -56,17 +73,9 @@ void PrintReportResult(List<ReportRow> result)
                             row.Currency, row.Income / 100, row.Income % 100, row.Expenditure / 100, row.Expenditure % 100);
 }
 
-DateTime BuildDate(string date)
-{
-    var intDate = int.Parse(date);
-    if (intDate < settings.MinDate)
-        throw new Exception("Invalid date");
-    return new DateTime(intDate / 100, intDate % 100, 1);
-}
-
 void Usage()
 {
-    Console.WriteLine("Usage: HomeAccountingServiceClient settingsFileName [test][month_report YYYYMM YYYYMM]");
+    Console.WriteLine("Usage: HomeAccountingServiceClient settingsFileName [test][month_report|account_report|category_report|detailed_report YYYYMM YYYYMM]");
 }
 
 internal class ConsoleLogger: ILogger
@@ -82,22 +91,3 @@ internal class ConsoleLogger: ILogger
     }
 }
 
-record Settings(
-    int UserId,
-    string ServerKeyFileName,
-    string KeyFileName,
-    string HostName,
-    ushort Port,
-    int TimeoutMs,
-    string DbName,
-    int MaxRequestMonths,
-    int MinDate)
-{
-    public void Validate()
-    {
-        if (UserId == 0 || string.IsNullOrEmpty(ServerKeyFileName) || string.IsNullOrEmpty(KeyFileName) ||
-            string.IsNullOrEmpty(HostName) || Port == 0 || string.IsNullOrEmpty(DbName) || MaxRequestMonths <= 0 ||
-            MinDate <= 0)
-            throw new Exception("Settings file validation error");
-    }
-}
