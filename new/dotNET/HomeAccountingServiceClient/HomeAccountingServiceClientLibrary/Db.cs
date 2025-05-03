@@ -226,7 +226,7 @@ public class Db
             throw new DbException($"totals counts do not match for key {key}");
     }
 
-    private Dictionary<int, Account> BuildAccounts(int date)
+    public Dictionary<int, Account> BuildAccounts(int date)
     {
         return _dicts.Accounts
             .Where(account => account.Value.ActiveTo == null || account.Value.ActiveTo > date)
@@ -234,6 +234,11 @@ public class Db
     }
     
     private static int DateToInt(DateTime date)
+    {
+        return date.Year * 10000 + date.Month * 100 + date.Day;
+    }
+
+    public static int GetIntDate(DateTime date)
     {
         return date.Year * 10000 + date.Month * 100 + date.Day;
     }

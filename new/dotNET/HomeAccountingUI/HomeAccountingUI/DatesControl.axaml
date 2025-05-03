@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="HomeAccountingUI.DatesControl">
+    <StackPanel Orientation="Horizontal">
+        <Label VerticalAlignment="Center">From</Label>
+        <ComboBox x:Name="CbFromMonth" SelectionChanged="CbFromMonth_OnSelectionChanged">
+            <ComboBoxItem>Jan</ComboBoxItem>
+            <ComboBoxItem>Feb</ComboBoxItem>
+            <ComboBoxItem>Mar</ComboBoxItem>
+            <ComboBoxItem>Apr</ComboBoxItem>
+            <ComboBoxItem>Mai</ComboBoxItem>
+            <ComboBoxItem>Jun</ComboBoxItem>
+            <ComboBoxItem>Jul</ComboBoxItem>
+            <ComboBoxItem>Aug</ComboBoxItem>
+            <ComboBoxItem>Sep</ComboBoxItem>
+            <ComboBoxItem>Oct</ComboBoxItem>
+            <ComboBoxItem>Nov</ComboBoxItem>
+            <ComboBoxItem>Dec</ComboBoxItem>
+        </ComboBox>
+        <ComboBox x:Name="CbFromYear" SelectionChanged="CbFromYear_OnSelectionChanged"/>
+        <Label VerticalAlignment="Center">To</Label>
+        <ComboBox x:Name="CbToMonth" SelectionChanged="CbToMonth_OnSelectionChanged">
+            <ComboBoxItem>Jan</ComboBoxItem>
+            <ComboBoxItem>Feb</ComboBoxItem>
+            <ComboBoxItem>Mar</ComboBoxItem>
+            <ComboBoxItem>Apr</ComboBoxItem>
+            <ComboBoxItem>Mai</ComboBoxItem>
+            <ComboBoxItem>Jun</ComboBoxItem>
+            <ComboBoxItem>Jul</ComboBoxItem>
+            <ComboBoxItem>Aug</ComboBoxItem>
+            <ComboBoxItem>Sep</ComboBoxItem>
+            <ComboBoxItem>Oct</ComboBoxItem>
+            <ComboBoxItem>Nov</ComboBoxItem>
+            <ComboBoxItem>Dec</ComboBoxItem>
+        </ComboBox>
+        <ComboBox x:Name="CbToYear" SelectionChanged="CbToYear_OnSelectionChanged"/>
+    </StackPanel>
+</UserControl>

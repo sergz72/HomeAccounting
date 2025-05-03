@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:homeAccountingUi="clr-namespace:HomeAccountingUI"
+             xmlns:homeAccountingServiceClientLibrary="clr-namespace:HomeAccountingServiceClientLibrary;assembly=HomeAccountingServiceClientLibrary"
+             mc:Ignorable="d"
+             x:Class="HomeAccountingUI.ReportView"
+             x:DataType="homeAccountingServiceClientLibrary:ReportRow">
+    <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,*">
+        <homeAccountingUi:DatesControl x:Name="DcDates" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4"
+                                       HorizontalAlignment="Center" DateFromChanged="DcDates_OnDateFromChanged"/>
+        <Label Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Grouping</Label>
+        <ComboBox Grid.Column="1" Grid.Row="1" x:Name="CbGrouping" SelectedIndex="0" HorizontalAlignment="Stretch">
+            <ComboBoxItem>Month</ComboBoxItem>
+            <ComboBoxItem>Account</ComboBoxItem>
+            <ComboBoxItem>Category</ComboBoxItem>
+            <ComboBoxItem>Detailed</ComboBoxItem>
+        </ComboBox>
+        <Label Grid.Row="1" Grid.Column="2" VerticalAlignment="Center">Account</Label>
+        <ComboBox Grid.Column="3" Grid.Row="1" x:Name="CbAccount" HorizontalAlignment="Stretch"/>
+        <Label Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">Category</Label>
+        <ComboBox Grid.Column="1" Grid.Row="2" x:Name="CbCategory" HorizontalAlignment="Stretch"/>
+        <Label Grid.Row="2" Grid.Column="2" VerticalAlignment="Center">Subcategory</Label>
+        <ComboBox Grid.Column="3" Grid.Row="2" x:Name="CbSubcategory" HorizontalAlignment="Stretch"/>
+        <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center" Click="Generate_OnClick">Generate</Button>
+        <DataGrid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" x:Name="DgData">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Date"  Binding="{Binding Date}"/>
+                <DataGridTextColumn Header="Account" Binding="{Binding Account}" />
+                <DataGridTextColumn Header="Category" Binding="{Binding Category}" />
+                <DataGridTextColumn Header="Subcategory" Binding="{Binding Subcategory}" />
+                <DataGridTextColumn Header="Currency" Binding="{Binding Currency}" />
+                <DataGridTextColumn Header="Income" Binding="{Binding Income}" />
+                <DataGridTextColumn Header="Expenditure" Binding="{Binding Expenditure}" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

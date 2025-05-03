@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomeAccountingUI", "HomeAccountingUI\HomeAccountingUI.csproj", "{1C609A2A-77D3-4C89-A675-D5BDF03D8804}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomeAccountingServiceClientLibrary", "..\HomeAccountingServiceClient\HomeAccountingServiceClientLibrary\HomeAccountingServiceClientLibrary.csproj", "{3085FD54-FACB-48D1-80C6-E30A7C22AC08}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C609A2A-77D3-4C89-A675-D5BDF03D8804}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C609A2A-77D3-4C89-A675-D5BDF03D8804}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C609A2A-77D3-4C89-A675-D5BDF03D8804}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C609A2A-77D3-4C89-A675-D5BDF03D8804}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3085FD54-FACB-48D1-80C6-E30A7C22AC08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3085FD54-FACB-48D1-80C6-E30A7C22AC08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3085FD54-FACB-48D1-80C6-E30A7C22AC08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3085FD54-FACB-48D1-80C6-E30A7C22AC08}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

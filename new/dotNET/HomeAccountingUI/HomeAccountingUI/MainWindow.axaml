@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        MinHeight="800" MinWidth="1500"
+        x:Class="HomeAccountingUI.MainWindow"
+        Title="HomeAccountingUI">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Reports">
+                <MenuItem Header="Re_port" Click="Report_OnClick"/>
+                <MenuItem Header="_Gas Report" Click="GasReport_OnClick"/>
+                <Separator/>
+                <MenuItem Header="_Exit" Click="Exit_OnClick"/>
+            </MenuItem>
+        </Menu>
+        <ListBox x:Name="LbLog" DockPanel.Dock="Bottom" Height="100"/>
+        <Panel x:Name="PContents"/>
+    </DockPanel>
+</Window>
