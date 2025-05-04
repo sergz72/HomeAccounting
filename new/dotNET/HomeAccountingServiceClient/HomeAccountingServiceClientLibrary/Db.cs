@@ -230,7 +230,7 @@ public class Db
             .Where(r => r.Key >= from && r.Key <= to)
             .SelectMany(r => r.Value.Operations)
             .GroupBy(op => _dicts.Subcategories[op.SubcategoryId].Category)
-            .SelectMany(kv => BuildReport(from, _dicts.Categories[kv.Key],
+            .SelectMany(kv => BuildReport(from, "Total",
                 kv, account, category, subcategory))
             .OrderBy(row => row.Currency)
             .ThenBy(row => -row.Expenditure)
@@ -387,6 +387,23 @@ public record ReportRow(
             change.Income,
             change.Expenditure
         );
+    }
+
+    public override string ToString()
+    {
+        return $"|{Date,8}|{Account,40}|{Category,40}|{Subcategory,40}|{Currency,8}|{Income / 100,8}.{Income % 100:00}|{Expenditure / 100,8}.{Expenditure % 100:00}|";
+    }
+    
+    public static string BuildHeaderRow()
+    {
+        const string f1 = "Date";
+        const string f2 = "Account";
+        const string f3 = "Category";
+        const string f4 = "Subcategory";
+        const string f5 = "Currency";
+        const string f6 = "Income";
+        const string f7 = "Expenditure";
+        return $"|{f1,-8}|{f2,-40}|{f3,-40}|{f4,-40}|{f5}|{f6,-11}|{f7}|";
     }
 }
 

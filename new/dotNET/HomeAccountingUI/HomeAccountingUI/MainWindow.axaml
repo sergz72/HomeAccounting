@@ -12,7 +12,9 @@
                 <MenuItem Header="_Exit" Click="Exit_OnClick"/>
             </MenuItem>
         </Menu>
-        <ListBox x:Name="LbLog" DockPanel.Dock="Bottom" Height="100"/>
+        <Border DockPanel.Dock="Bottom" BorderBrush="Gray" BorderThickness="1">
+            <ListBox x:Name="LbLog" Height="100"/>
+        </Border>
         <Panel x:Name="PContents"/>
     </DockPanel>
 </Window>

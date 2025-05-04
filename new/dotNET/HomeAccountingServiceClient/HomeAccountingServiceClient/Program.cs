@@ -68,9 +68,9 @@ return;
 
 void PrintReportResult(List<ReportRow> result)
 {
+    Console.WriteLine(ReportRow.BuildHeaderRow());
     foreach (var row in result)
-        Console.WriteLine("{0,8}{1,30}{2,30}{3,30} {4} {5}.{6:00}\t{7}.{8:00}", row.Date, row.Account, row.Category, row.Subcategory,
-                            row.Currency, row.Income / 100, row.Income % 100, row.Expenditure / 100, row.Expenditure % 100);
+        Console.WriteLine(row.ToString());
 }
 
 void Usage()
