@@ -20,6 +20,7 @@ public class Db
     public int RecordCount => _records.Count;
     public Dictionary<int, string> Categories => _dicts.Categories;
     public Dictionary<int, Subcategory> Subcategories => _dicts.Subcategories;
+    public Dictionary<int, Account> Accounts => _dicts.Accounts;
 
     public Db(string configFileName, ILogger logger, int retryCount = 3)
     {
@@ -155,7 +156,7 @@ public class Db
     }
     
     private IEnumerable<ReportRow> BuildReport(int from, string date, IEnumerable<FinanceOperation> operations,
-                                                int? account, int? category, int? subcategory)
+                                                int? account, int? category, int? subcategory, bool excludeSpecial)
     {
         return operations
             .Where(op =>
@@ -163,7 +164,7 @@ public class Db
                 (category == null || _dicts.GetCategoryId(op.SubcategoryId) == category) &&
                 (subcategory == null || op.SubcategoryId == subcategory))
             .GroupBy(op => _dicts.GetAccount(op.AccountId).Currency)
-            .SelectMany(ops => BuildReportRows(from, date, ops.ToList()));
+            .SelectMany(ops => BuildReportRows(from, date, ops.ToList(), excludeSpecial));
 
     }
     
@@ -175,13 +176,13 @@ public class Db
             .Where(r => r.Key >= from && r.Key <= to)
             .GroupBy(kv => kv.Key / 100) // by month
             .SelectMany(kv => BuildReport(kv.Key * 100 + 1, kv.Key.ToString(),
-                kv.SelectMany(r => r.Value.Operations), account, category, subcategory))
+                kv.SelectMany(r => r.Value.Operations), account, category, subcategory, true))
             .Reverse()
             .ToList();
         return result;
     }
     
-    private IEnumerable<ReportRow> BuildReportRows(int from, string date, List<FinanceOperation> operations)
+    private IEnumerable<ReportRow> BuildReportRows(int from, string date, List<FinanceOperation> operations, bool excludeSpecial)
     {
         var changes = new FinanceChanges(new Dictionary<int, long>());
         var accounts = BuildAccounts(from);
@@ -193,8 +194,11 @@ public class Db
         foreach (var op in operations)
         {
             var subcategory = _dicts.Subcategories[op.SubcategoryId];
-            if (subcategory.Code is SubcategoryCode.Trfr or SubcategoryCode.Incc or SubcategoryCode.Expc)
-                continue;
+            if (excludeSpecial)
+            {
+                if (subcategory.Code is SubcategoryCode.Trfr or SubcategoryCode.Incc or SubcategoryCode.Expc)
+                    continue;
+            }
             var currency = _dicts.GetAccount(op.AccountId).Currency;
             var row = intermediateRows[currency];
             row.ProcessOperation(_dicts, op);
@@ -214,7 +218,7 @@ public class Db
             .SelectMany(r => r.Value.Operations)
             .GroupBy(op => op.AccountId)
             .SelectMany(kv => BuildReport(from, "Total",
-                                kv, account, category, subcategory))
+                                kv, account, category, subcategory, false))
             .OrderBy(row => row.Currency)
             .ThenBy(row => -row.Expenditure)
             .ThenBy(row => row.Income)
@@ -231,7 +235,7 @@ public class Db
             .SelectMany(r => r.Value.Operations)
             .GroupBy(op => _dicts.Subcategories[op.SubcategoryId].Category)
             .SelectMany(kv => BuildReport(from, "Total",
-                kv, account, category, subcategory))
+                kv, account, category, subcategory, false))
             .OrderBy(row => row.Currency)
             .ThenBy(row => -row.Expenditure)
             .ThenBy(row => row.Income)

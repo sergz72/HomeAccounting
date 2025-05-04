@@ -93,6 +93,18 @@ public partial class DatesControl : UserControl
         return new DateTime(year, month, 1).AddMonths(1).AddDays(-1);
     }
 
+    public void SetDates(DateTime dateFrom, DateTime dateTo)
+    {
+        var yearFrom = dateFrom.Year;
+        CbFromYear.SelectedItem = yearFrom;
+        var monthFrom = dateFrom.Month;
+        CbFromMonth.SelectedIndex = monthFrom - 1;
+        var yearTo = dateTo.Year;
+        CbToYear.SelectedItem = yearTo;
+        var monthTo = dateTo.Month;
+        CbToMonth.SelectedIndex = monthTo - 1;
+    }
+    
     private void CbFromMonth_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         OnDateFromChanged();

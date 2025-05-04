@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
-using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using HomeAccountingServiceClientLibrary;
@@ -9,9 +9,18 @@ using HomeAccountingServiceClientLibrary.entities;
 
 namespace HomeAccountingUI;
 
+internal record ReportParameters(
+    DateTime DateFrom,
+    DateTime DateTo,
+    int Grouping,
+    int? AccountId,
+    int? CategoryId,
+    int? SubcategoryId);
+
 public partial class ReportView : UserControl
 {
     private readonly Db _db;
+    private readonly Stack<ReportParameters> _parameterStack = new();
     
     public ReportView()
     {
@@ -54,8 +63,8 @@ public partial class ReportView : UserControl
         CbSubcategory.ItemsSource = idNameList;
         CbSubcategory.SelectedIndex = 0;
     }
-    
-    private void Generate_OnClick(object? sender, RoutedEventArgs e)
+
+    private void GenerateReport()
     {
         var account = (IdName)CbAccount.SelectedItem!;
         var category = (IdName)CbCategory.SelectedItem!;
@@ -66,6 +75,11 @@ public partial class ReportView : UserControl
         LbData.Items.Clear();
         LbData.Items.Add(ReportRow.BuildHeaderRow());
         result.ForEach(row => LbData.Items.Add(row));
+    }
+
+    private void Generate_OnClick(object? sender, RoutedEventArgs e)
+    {
+        GenerateReport();
     }
 
     private void DcDates_OnDateFromChanged(object? sender, RoutedEventArgs e)
@@ -86,9 +100,91 @@ public partial class ReportView : UserControl
 
     private void Enter(ReportRow reportRow)
     {
+        if (CbGrouping.SelectedIndex != (int)ReportGrouping.Detailed)
+        {
+            _parameterStack.Push(new ReportParameters(
+                    DcDates.GetDateFrom(),
+                    DcDates.GetDateTo(),
+                    CbGrouping.SelectedIndex,
+                    ((IdName)CbAccount.SelectedItem!).Id,
+                    ((IdName)CbCategory.SelectedItem!).Id,
+                    ((IdName)CbSubcategory.SelectedItem!).Id
+                ));
+            switch ((ReportGrouping)CbGrouping.SelectedIndex)
+            {
+                case ReportGrouping.Month:
+                {
+                    CbGrouping.SelectedIndex = (int)ReportGrouping.Category;
+                    var intDate = int.Parse(reportRow.Date);
+                    var date = new DateTime(intDate / 100, intDate % 100, 1);
+                    DcDates.SetDates(date, date);
+                    break;
+                }
+                case ReportGrouping.Account:
+                {
+                    if (reportRow.Account == "")
+                    {
+                        _parameterStack.Pop();
+                        return;
+                    }
+                    CbGrouping.SelectedIndex = (int)ReportGrouping.Category;
+                    var accountId = _db.Accounts.First(kv => kv.Value.Name == reportRow.Account).Key;
+                    SelectAccount(accountId);
+                    break;
+                }
+                default: // by category
+                {
+                    CbGrouping.SelectedIndex = (int)ReportGrouping.Detailed;
+                    var categoryId = _db.Categories.First(kv => kv.Value == reportRow.Category).Key;
+                    SelectCategory(categoryId);
+                    break;
+                }
+            }
+            GenerateReport();
+        }
     }
 
     private void Back_OnClick(object? sender, RoutedEventArgs e)
     {
+        if (_parameterStack.TryPop(out var parameters))
+        {
+            DcDates.SetDates(parameters.DateFrom, parameters.DateTo);
+            CbGrouping.SelectedIndex = parameters.Grouping;
+            SelectAccount(parameters.AccountId);
+            SelectCategory(parameters.CategoryId);
+            var idx = 0;
+            foreach (var item in CbSubcategory.Items)
+            {
+                if (((IdName)item!).Id == parameters.SubcategoryId)
+                    break;
+                idx++;
+            }
+            CbSubcategory.SelectedIndex = idx;
+            GenerateReport();
+        }
+    }
+
+    private void SelectAccount(int? accountId)
+    {
+        var idx = 0;
+        foreach (var item in CbAccount.Items)
+        {
+            if (((IdName)item!).Id == accountId)
+                break;
+            idx++;
+        }
+        CbAccount.SelectedIndex = idx;
+    }
+
+    private void SelectCategory(int? categoryId)
+    {
+        var idx = 0;
+        foreach (var item in CbCategory.Items)
+        {
+            if (((IdName)item!).Id == categoryId)
+                break;
+            idx++;
+        }
+        CbCategory.SelectedIndex = idx;
     }
 }
