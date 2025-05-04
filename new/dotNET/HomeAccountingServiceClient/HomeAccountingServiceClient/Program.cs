@@ -25,7 +25,7 @@ switch (args[1])
         else
         {
             var from = db.BuildDate(args[2]); 
-            var to = db.BuildDate(args[3]);
+            var to = db.BuildDateEnd(args[3]);
             PrintReportResult(db.BuildReport(from, to, ReportGrouping.Month, null, null, null));
         }
         break;
@@ -35,7 +35,7 @@ switch (args[1])
         else
         {
             var from = db.BuildDate(args[2]); 
-            var to = db.BuildDate(args[3]);
+            var to = db.BuildDateEnd(args[3]);
             PrintReportResult(db.BuildReport(from, to, ReportGrouping.Account, null, null, null));
         }
         break;
@@ -45,7 +45,7 @@ switch (args[1])
         else
         {
             var from = db.BuildDate(args[2]); 
-            var to = db.BuildDate(args[3]);
+            var to = db.BuildDateEnd(args[3]);
             PrintReportResult(db.BuildReport(from, to, ReportGrouping.Category, null, null, null));
         }
         break;
@@ -55,7 +55,7 @@ switch (args[1])
         else
         {
             var from = db.BuildDate(args[2]); 
-            var to = db.BuildDate(args[3]);
+            var to = db.BuildDateEnd(args[3]);
             PrintReportResult(db.BuildReport(from, to, ReportGrouping.Detailed, null, null, null));
         }
         break;

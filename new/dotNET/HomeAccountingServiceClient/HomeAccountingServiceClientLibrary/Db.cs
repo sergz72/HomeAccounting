@@ -14,9 +14,12 @@ public class Db
     private readonly ILogger _logger;
     private readonly SortedDictionary<int, FinanceRecord> _records;
     private readonly int _minDate;
-
+    
     private DateTime _from, _to;
+    
     public int RecordCount => _records.Count;
+    public Dictionary<int, string> Categories => _dicts.Categories;
+    public Dictionary<int, Subcategory> Subcategories => _dicts.Subcategories;
 
     public Db(string configFileName, ILogger logger, int retryCount = 3)
     {
@@ -142,31 +145,42 @@ public class Db
             throw new Exception("Invalid date");
         return new DateTime(intDate / 100, intDate % 100, 1);
     }
+
+    public DateTime BuildDateEnd(string date)
+    {
+        var intDate = int.Parse(date);
+        if (intDate < _minDate)
+            throw new Exception("Invalid date");
+        return new DateTime(intDate / 100, intDate % 100, 1).AddMonths(1).AddDays(-1);
+    }
+    
+    private IEnumerable<ReportRow> BuildReport(int from, string date, IEnumerable<FinanceOperation> operations,
+                                                int? account, int? category, int? subcategory)
+    {
+        return operations
+            .Where(op =>
+                (account == null || op.AccountId == account) &&
+                (category == null || _dicts.GetCategoryId(op.SubcategoryId) == category) &&
+                (subcategory == null || op.SubcategoryId == subcategory))
+            .GroupBy(op => _dicts.GetAccount(op.AccountId).Currency)
+            .SelectMany(ops => BuildReportRows(from, date, ops.ToList()));
+
+    }
     
     private List<ReportRow> BuildByMonthReport(DateTime fromDate, DateTime toDate, int? account, int? category, int? subcategory)
     {
-        var result = new List<ReportRow>();
-        while (fromDate <= toDate)
-        {
-            var endDate = new DateTime(fromDate.Year, fromDate.Month, 1).AddMonths(1).AddDays(-1);
-            var from = DateToInt(fromDate);
-            var to = DateToInt(endDate);
-            var date = (from / 100).ToString();
-            var rows = _records
-                .Where(r => r.Key >= from && r.Key <= to)
-                .SelectMany(r => r.Value.Operations)
-                .Where(op =>
-                    (account == null || op.AccountId == account) &&
-                    (category == null || _dicts.GetCategoryId(op.SubcategoryId) == category) &&
-                    (subcategory == null || op.SubcategoryId == subcategory))
-                .GroupBy(op => _dicts.GetAccount(op.AccountId).Currency)
-                .SelectMany(ops => BuildReportRows(from, date, ops.ToList()));
-            result.AddRange(rows);
-            fromDate = endDate.AddDays(1);
-        }
+        var from = DateToInt(fromDate);
+        var to = DateToInt(toDate);
+        var result = _records
+            .Where(r => r.Key >= from && r.Key <= to)
+            .GroupBy(kv => kv.Key / 100) // by month
+            .SelectMany(kv => BuildReport(kv.Key * 100 + 1, kv.Key.ToString(),
+                kv.SelectMany(r => r.Value.Operations), account, category, subcategory))
+            .Reverse()
+            .ToList();
         return result;
     }
-
+    
     private IEnumerable<ReportRow> BuildReportRows(int from, string date, List<FinanceOperation> operations)
     {
         var changes = new FinanceChanges(new Dictionary<int, long>());
@@ -191,21 +205,61 @@ public class Db
             .Where(row => row.Expenditure != 0 || row.Income != 0);
     }
     
-    private List<ReportRow> BuildByAccountReport(DateTime from, DateTime to, int? account, int? category, int? subcategory)
+    private List<ReportRow> BuildByAccountReport(DateTime fromDate, DateTime toDate, int? account, int? category, int? subcategory)
     {
-        throw new NotImplementedException();
+        var from = DateToInt(fromDate);
+        var to = DateToInt(toDate);
+        var result = _records
+            .Where(r => r.Key >= from && r.Key <= to)
+            .SelectMany(r => r.Value.Operations)
+            .GroupBy(op => op.AccountId)
+            .SelectMany(kv => BuildReport(from, "Total",
+                                kv, account, category, subcategory))
+            .OrderBy(row => row.Currency)
+            .ThenBy(row => -row.Expenditure)
+            .ThenBy(row => row.Income)
+            .ToList();
+        return result;
     }
 
-    private List<ReportRow> BuildByCategoryReport(DateTime from, DateTime to, int? account, int? category, int? subcategory)
+    private List<ReportRow> BuildByCategoryReport(DateTime fromDate, DateTime toDate, int? account, int? category, int? subcategory)
     {
-        throw new NotImplementedException();
+        var from = DateToInt(fromDate);
+        var to = DateToInt(toDate);
+        var result = _records
+            .Where(r => r.Key >= from && r.Key <= to)
+            .SelectMany(r => r.Value.Operations)
+            .GroupBy(op => _dicts.Subcategories[op.SubcategoryId].Category)
+            .SelectMany(kv => BuildReport(from, _dicts.Categories[kv.Key],
+                kv, account, category, subcategory))
+            .OrderBy(row => row.Currency)
+            .ThenBy(row => -row.Expenditure)
+            .ThenBy(row => row.Income)
+            .ToList();
+        return result;
     }
     
-    private List<ReportRow> BuildDetailedReport(DateTime from, DateTime to, int? account, int? category, int? subcategory)
+    private List<ReportRow> BuildDetailedReport(DateTime fromDate, DateTime toDate, int? account, int? category, int? subcategory)
     {
-        throw new NotImplementedException();
+        var from = DateToInt(fromDate);
+        var to = DateToInt(toDate);
+        var result = _records
+            .Where(r => r.Key >= from && r.Key <= to)
+            .SelectMany(r => BuildRows(r.Key, r.Value.Operations, account, category, subcategory))
+            .ToList();
+        return result;
     }
-    
+
+    private IEnumerable<ReportRow> BuildRows(int date, List<FinanceOperation> operations, int? account, int? category,
+                                                int? subcategory)
+    {
+        return operations.Where(op =>
+                (account == null || op.AccountId == account) &&
+                (category == null || _dicts.GetCategoryId(op.SubcategoryId) == category) &&
+                (subcategory == null || op.SubcategoryId == subcategory))
+            .SelectMany(op => ReportRow.Create(date.ToString(), op, _dicts));
+    }
+
     private void GetRecords(DateTime from, DateTime to)
     {
         while (from < to)
@@ -309,7 +363,32 @@ public record ReportRow(
     string Subcategory,
     string Currency,
     long Income,
-    long Expenditure);
+    long Expenditure)
+{
+    public static List<ReportRow> Create(string date, FinanceOperation op, Dicts dicts)
+    {
+        var changes = new FinanceChanges(new Dictionary<int, long>());
+        op.UpdateChanges(changes, dicts);
+        return changes.Changes
+            .Select(change => Create(date, change.Key, change.Value, op, dicts))
+            .ToList();
+    }
+
+    private static ReportRow Create(string date, int accountId, FinanceChange change, FinanceOperation op, Dicts dicts)
+    {
+        var account = dicts.Accounts[accountId];
+        var subcategory = dicts.Subcategories[op.SubcategoryId];
+        return new ReportRow(
+            date,
+            account.Name,
+            dicts.Categories[subcategory.Category],
+            subcategory.Name,
+            account.Currency,
+            change.Income,
+            change.Expenditure
+        );
+    }
+}
 
 public interface ILogger
 {
