@@ -60,8 +60,9 @@ public partial class ReportView : UserControl
             ? new Dictionary<int, Subcategory>()
             : _db.Subcategories.Where(kv => kv.Value.Category == category.Id).ToDictionary();
         var idNameList = IdName.FromSubcategories(list);
+        var allIdx = idNameList.FindIndex(item => item.Id == null);
         CbSubcategory.ItemsSource = idNameList;
-        CbSubcategory.SelectedIndex = 0;
+        CbSubcategory.SelectedIndex = allIdx;
     }
 
     private void GenerateReport()
