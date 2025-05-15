@@ -49,7 +49,7 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.preference.ktx)
     implementation(libs.kotlinx.coroutines.core)
-    implementation("androidx.datastore:datastore-preferences:1.1.4")
+    implementation("androidx.datastore:datastore-preferences:1.1.6")
     api(libs.gson)
     runtimeOnly(libs.commons.compress)
     implementation(files("../../../IdeaProjects/smart_home/smart_home_common/build/libs/smart_home_common-0.1.jar"))

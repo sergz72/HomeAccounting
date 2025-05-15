@@ -320,7 +320,7 @@ class MainActivity : AppCompatActivity(), ActivityResultCallback<ActivityResult>
         if (requestCode == SETTINGS && result.resultCode == RESULT_OK) {
             updateServer()
         } else if ((requestCode == NEWOPERATION || requestCode == MODIFYOPERATION) && result.resultCode == RESULT_OK) {
-            Thread.sleep(1000)
+            Thread.sleep(3000)
             refresh()
         } else if (requestCode == PINCHECK) {
             when (result.resultCode) {
