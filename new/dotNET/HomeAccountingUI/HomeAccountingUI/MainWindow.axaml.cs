@@ -9,6 +9,7 @@ public partial class MainWindow : Window
     private readonly ListControlLogger _logger;
     private readonly ReportView _reportView;
     private readonly GasReportView _gasReportView;
+    private readonly AccountsReportView _accountsReportView;
 
     public MainWindow()
     {
@@ -22,6 +23,7 @@ public partial class MainWindow : Window
         _logger = logger;
         _reportView = new ReportView(db);
         _gasReportView = new GasReportView(db);
+        _accountsReportView = new AccountsReportView(db);
         ShowReportView();
     }
 
@@ -40,6 +42,11 @@ public partial class MainWindow : Window
         PContents.Children[0] = _gasReportView;
     }
 
+    private void AccountsReport_OnClick(object? sender, RoutedEventArgs e)
+    {
+        PContents.Children[0] = _accountsReportView;
+    }
+    
     private void ShowReportView()
     {
         if (PContents.Children.Count == 0)

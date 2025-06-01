@@ -8,6 +8,7 @@
             <MenuItem Header="_Reports">
                 <MenuItem Header="Re_port" Click="Report_OnClick"/>
                 <MenuItem Header="_Gas Report" Click="GasReport_OnClick"/>
+                <MenuItem Header="_Accounts" Click="AccountsReport_OnClick"/>
                 <Separator/>
                 <MenuItem Header="_Exit" Click="Exit_OnClick"/>
             </MenuItem>

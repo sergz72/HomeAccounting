@@ -70,7 +70,7 @@ public partial class DatesControl : UserControl
         CbToMonth.SelectedIndex = monthNow - 1;
         monthNow -= 6;
         var index = CbFromYear.Items.Count - 1;
-        if (monthNow < 0)
+        if (monthNow <= 0)
         {
             monthNow += 12;
             index--;
